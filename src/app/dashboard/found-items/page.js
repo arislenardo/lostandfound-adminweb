@@ -90,6 +90,7 @@ export default function FoundItemsPage() {
               <th>Item Name</th>
               <th>Category</th>
               <th>Status</th>
+              <th>Reported At</th>
               <th>Finder UID</th>
               <th>Actions</th>
             </tr>
@@ -97,7 +98,7 @@ export default function FoundItemsPage() {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan="6" className={styles.emptyState}>No items have been reported found yet.</td>
+                <td colSpan="7" className={styles.emptyState}>No items have been reported found yet.</td>
               </tr>
             ) : (
               items.map((item) => (
@@ -126,6 +127,9 @@ export default function FoundItemsPage() {
                     <span className={styles.badge} style={{ backgroundColor: item.status === 'returned' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)', color: item.status === 'returned' ? 'var(--success)' : '#eab308' }}>
                       {item.status || 'Active'}
                     </span>
+                  </td>
+                  <td style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
+                    {item.createdAt ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() : 'N/A'}
                   </td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.userId}</td>
                   <td>

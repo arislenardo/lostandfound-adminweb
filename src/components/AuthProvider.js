@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
   user: null,
@@ -15,11 +16,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      const isLoginPage = window.location.pathname === '/login' || window.location.pathname === '/';
-
       if (firebaseUser) {
         try {
           const adminDocRef = doc(db, 'admins', firebaseUser.uid);
@@ -28,40 +29,43 @@ export function AuthProvider({ children }) {
           if (adminDoc.exists()) {
             setUser(firebaseUser);
             setIsAdmin(true);
-            
-            if (isLoginPage) {
-              window.location.href = '/dashboard';
-            }
           } else {
             console.warn('Unauthorized access attempt by:', firebaseUser.email);
             await signOut(auth);
             setUser(null);
             setIsAdmin(false);
-            if (!isLoginPage) {
-              window.location.href = '/login';
-            }
           }
         } catch (error) {
           console.error("Error verifying admin status:", error);
           await signOut(auth);
           setUser(null);
           setIsAdmin(false);
-          if (!isLoginPage) {
-            window.location.href = '/login';
-          }
         }
       } else {
         setUser(null);
         setIsAdmin(false);
-        if (!isLoginPage) {
-          window.location.href = '/login';
-        }
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isLoginPage = pathname === '/login' || pathname === '/';
+
+    if (user && isAdmin) {
+      if (isLoginPage) {
+        router.push('/dashboard');
+      }
+    } else {
+      if (!isLoginPage) {
+        router.push('/login');
+      }
+    }
+  }, [user, isAdmin, loading, pathname, router]);
 
   return (
     <AuthContext.Provider value={{ user, isAdmin, loading }}>

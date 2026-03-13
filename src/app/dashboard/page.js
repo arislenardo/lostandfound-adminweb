@@ -66,7 +66,7 @@ export default function DashboardOverview() {
         i.category || '',
         i.status || '',
         i.userId || '',
-        i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleDateString() : '',
+        i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleString() : '',
       ]),
       [''],
       ['--- LOST ITEMS ---'],
@@ -77,7 +77,7 @@ export default function DashboardOverview() {
         i.category || '',
         i.status || '',
         i.userId || '',
-        i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleDateString() : '',
+        i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleString() : '',
       ]),
       [''],
       ['--- CLAIMS ---'],
@@ -87,7 +87,7 @@ export default function DashboardOverview() {
         c.itemId || '',
         c.userId || '',
         c.status || '',
-        c.timestamp ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleDateString() : '',
+        c.timestamp ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString() : '',
       ]),
     ];
 
