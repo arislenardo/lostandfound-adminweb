@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, doc, updateDoc } from 'firebase/firestore';
 import styles from '../table.module.css';
 
 export default function ClaimsPage() {
@@ -17,8 +17,8 @@ export default function ClaimsPage() {
         const querySnapshot = await getDocs(q);
         
         const fetchedClaims = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         setClaims(fetchedClaims);
@@ -31,6 +31,23 @@ export default function ClaimsPage() {
 
     fetchClaims();
   }, []);
+
+  const handleUpdateStatus = async (claimId, newStatus) => {
+    try {
+      const claimRef = doc(db, 'claims', claimId);
+      await updateDoc(claimRef, { status: newStatus });
+      
+      // Update local state to reflect UI immediately
+      setClaims(prevClaims => 
+        prevClaims.map(claim => 
+          claim.id === claimId ? { ...claim, status: newStatus } : claim
+        )
+      );
+    } catch (error) {
+      console.error(`Error updating claim to ${newStatus}:`, error);
+      alert(`Failed to update claim: ${error.message}`);
+    }
+  };
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -85,8 +102,20 @@ export default function ClaimsPage() {
                     <td>
                       {claim.status === 'pending' ? (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className={styles.actionBtn} style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>Approve</button>
-                          <button className={styles.actionBtn} style={{ borderColor: 'var(--error)', color: 'var(--error)' }}>Reject</button>
+                          <button 
+                            className={styles.actionBtn} 
+                            style={{ borderColor: 'var(--success)', color: 'var(--success)' }}
+                            onClick={() => handleUpdateStatus(claim.id, 'approved')}
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            className={styles.actionBtn} 
+                            style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+                            onClick={() => handleUpdateStatus(claim.id, 'rejected')}
+                          >
+                            Reject
+                          </button>
                         </div>
                       ) : (
                         <button className={styles.actionBtn}>View Details</button>

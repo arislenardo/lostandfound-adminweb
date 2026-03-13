@@ -2,24 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, doc, deleteDoc } from 'firebase/firestore';
 import styles from '../table.module.css';
 import Image from 'next/image';
+import ItemDetailModal from '@/components/ItemDetailModal';
 
 export default function FoundItemsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal State
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchItems() {
       try {
         const itemsRef = collection(db, 'found_items');
-        const q = query(itemsRef, orderBy('timestamp', 'desc'));
+        const q = query(itemsRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         
         const fetchedItems = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         setItems(fetchedItems);
@@ -41,6 +46,23 @@ export default function FoundItemsPage() {
       case 'keys': return styles.keys;
       case 'bags': return styles.bags;
       default: return styles.other;
+    }
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    if (!window.confirm("Are you sure you want to delete this found item? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const itemRef = doc(db, 'found_items', itemId);
+      await deleteDoc(itemRef);
+      
+      // Update local state to reflect UI immediately
+      setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error(`Error deleting item:`, error);
+      alert(`Failed to delete item: ${error.message}`);
     }
   };
 
@@ -100,7 +122,21 @@ export default function FoundItemsPage() {
                   </td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.userId}</td>
                   <td>
-                    <button className={styles.actionBtn}>View Details</button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                       <button 
+                         className={styles.actionBtn}
+                         onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}
+                       >
+                         Edit/View
+                       </button>
+                       <button 
+                         className={styles.actionBtn} 
+                         style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+                         onClick={() => handleDeleteItem(item.id)}
+                       >
+                         Delete
+                       </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -108,6 +144,13 @@ export default function FoundItemsPage() {
           </tbody>
         </table>
       </div>
+
+      <ItemDetailModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setSelectedItem(null); }} 
+        item={selectedItem}
+        type="found"
+      />
     </div>
   );
 }
