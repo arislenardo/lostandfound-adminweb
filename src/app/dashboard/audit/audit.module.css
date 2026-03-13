@@ -1,0 +1,14 @@
+/* Audit Log Page */
+.pageContainer { padding: 2rem; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.header h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.header span { font-size: 0.875rem; color: var(--text-muted); }
+.tableWrapper { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 0.875rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+.table th { background: var(--bg-card); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+.table td { color: var(--text-primary); }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: rgba(255,255,255,0.02); }
+.emptyState { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.875rem; }
+.badge { display: inline-flex; padding: 0.25rem 0.625rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; background: rgba(99,102,241,0.1); color: var(--accent); }

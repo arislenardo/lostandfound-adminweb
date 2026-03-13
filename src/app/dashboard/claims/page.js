@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, getDocs, orderBy, query, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import styles from '../table.module.css';
 
 export default function ClaimsPage() {
@@ -17,8 +17,8 @@ export default function ClaimsPage() {
         const querySnapshot = await getDocs(q);
         
         const fetchedClaims = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         setClaims(fetchedClaims);
@@ -31,6 +31,28 @@ export default function ClaimsPage() {
 
     fetchClaims();
   }, []);
+
+  const handleUpdateStatus = async (claimId, newStatus) => {
+    const claim = claims.find(c => c.id === claimId);
+    const adminUser = auth.currentUser;
+    try {
+      await updateDoc(doc(db, 'claims', claimId), { status: newStatus });
+      await addDoc(collection(db, 'admin_history'), {
+        adminId: adminUser?.uid || 'unknown',
+        adminName: adminUser?.email || 'Admin',
+        actionType: newStatus === 'approved' ? 'APPROVED_CLAIM' : 'REJECTED_CLAIM',
+        itemTitle: `Claim for item ${claim?.itemId?.substring(0, 8) || '?'}`,
+        itemId: claim?.itemId || claimId,
+        timestamp: serverTimestamp(),
+      });
+      setClaims(prev =>
+        prev.map(c => c.id === claimId ? { ...c, status: newStatus } : c)
+      );
+    } catch (error) {
+      console.error(`Error updating claim to ${newStatus}:`, error);
+      alert(`Failed to update claim: ${error.message}`);
+    }
+  };
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -85,8 +107,20 @@ export default function ClaimsPage() {
                     <td>
                       {claim.status === 'pending' ? (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className={styles.actionBtn} style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>Approve</button>
-                          <button className={styles.actionBtn} style={{ borderColor: 'var(--error)', color: 'var(--error)' }}>Reject</button>
+                          <button 
+                            className={styles.actionBtn} 
+                            style={{ borderColor: 'var(--success)', color: 'var(--success)' }}
+                            onClick={() => handleUpdateStatus(claim.id, 'approved')}
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            className={styles.actionBtn} 
+                            style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+                            onClick={() => handleUpdateStatus(claim.id, 'rejected')}
+                          >
+                            Reject
+                          </button>
                         </div>
                       ) : (
                         <button className={styles.actionBtn}>View Details</button>

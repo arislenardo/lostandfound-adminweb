@@ -31,6 +31,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Lost Items', path: '/dashboard/lost-items' },
     { name: 'Claims', path: '/dashboard/claims' },
     { name: 'Users', path: '/dashboard/users' },
+    { name: 'Audit Log', path: '/dashboard/audit' },
   ];
 
   return (

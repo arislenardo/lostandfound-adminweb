@@ -1,25 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, getDocs, orderBy, query, doc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import styles from '../table.module.css';
 import Image from 'next/image';
+import ItemDetailModal from '@/components/ItemDetailModal';
 
 export default function LostItemsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal State
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const adminUser = auth.currentUser;
+
   useEffect(() => {
     async function fetchItems() {
       try {
         const itemsRef = collection(db, 'lost_items');
-        const q = query(itemsRef, orderBy('timestamp', 'desc'));
+        const q = query(itemsRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         
         const fetchedItems = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          id: doc.id
         }));
         
         setItems(fetchedItems);
@@ -41,6 +47,29 @@ export default function LostItemsPage() {
       case 'keys': return styles.keys;
       case 'bags': return styles.bags;
       default: return styles.other;
+    }
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    const item = items.find(i => i.id === itemId);
+    if (!window.confirm(`Are you sure you want to delete "${item?.name || 'this item'}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'lost_items', itemId));
+      await addDoc(collection(db, 'admin_history'), {
+        adminId: adminUser?.uid || 'unknown',
+        adminName: adminUser?.email || 'Admin',
+        actionType: 'DELETED_LOST_ITEM',
+        itemTitle: item?.name || 'Unknown Item',
+        itemId,
+        timestamp: serverTimestamp(),
+      });
+      setItems(prev => prev.filter(i => i.id !== itemId));
+    } catch (error) {
+      console.error(`Error deleting item:`, error);
+      alert(`Failed to delete item: ${error.message}`);
     }
   };
 
@@ -100,7 +129,21 @@ export default function LostItemsPage() {
                   </td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.userId}</td>
                   <td>
-                    <button className={styles.actionBtn}>View Details</button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                       <button 
+                         className={styles.actionBtn}
+                         onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}
+                       >
+                         Edit/View
+                       </button>
+                       <button 
+                         className={styles.actionBtn} 
+                         style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
+                         onClick={() => handleDeleteItem(item.id)}
+                       >
+                         Delete
+                       </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -108,6 +151,13 @@ export default function LostItemsPage() {
           </tbody>
         </table>
       </div>
+
+      <ItemDetailModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setSelectedItem(null); }} 
+        item={selectedItem}
+        type="lost"
+      />
     </div>
   );
 }
