@@ -1,0 +1,104 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import styles from '../table.module.css';
+
+export default function ClaimsPage() {
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchClaims() {
+      try {
+        const claimsRef = collection(db, 'claims');
+        const q = query(claimsRef, orderBy('timestamp', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        const fetchedClaims = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setClaims(fetchedClaims);
+      } catch (error) {
+        console.error("Error fetching claims:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchClaims();
+  }, []);
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'approved': return { bg: 'rgba(34, 197, 94, 0.1)', color: 'var(--success)' };
+      case 'rejected': return { bg: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)' };
+      case 'pending': default: return { bg: 'rgba(234, 179, 8, 0.1)', color: '#eab308' };
+    }
+  };
+
+  if (loading) return <div className={styles.emptyState}>Loading Claims...</div>;
+
+  return (
+    <div className={styles.pageContainer}>
+      <div className={styles.header}>
+        <h2>Claim Resolution Hub</h2>
+        <span>{claims.length} Total Claims</span>
+      </div>
+
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Claim ID</th>
+              <th>Found Item ID</th>
+              <th>Claimant UID</th>
+              <th>Status</th>
+              <th>Date Filed</th>
+              <th>Admin Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {claims.length === 0 ? (
+              <tr>
+                <td colSpan="6" className={styles.emptyState}>No claims have been filed yet.</td>
+              </tr>
+            ) : (
+              claims.map((claim) => {
+                const statusStyle = getStatusClass(claim.status);
+                const date = claim.timestamp ? new Date(claim.timestamp.toDate()).toLocaleDateString() : 'Unknown';
+
+                return (
+                  <tr key={claim.id}>
+                    <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{claim.id.substring(0, 8)}...</td>
+                    <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{claim.itemId?.substring(0,8)}...</td>
+                    <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{claim.userId}</td>
+                    <td>
+                      <span className={styles.badge} style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}>
+                        {claim.status || 'Pending'}
+                      </span>
+                    </td>
+                    <td>{date}</td>
+                    <td>
+                      {claim.status === 'pending' ? (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className={styles.actionBtn} style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>Approve</button>
+                          <button className={styles.actionBtn} style={{ borderColor: 'var(--error)', color: 'var(--error)' }}>Reject</button>
+                        </div>
+                      ) : (
+                        <button className={styles.actionBtn}>View Details</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
