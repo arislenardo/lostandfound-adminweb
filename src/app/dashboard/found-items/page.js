@@ -129,7 +129,7 @@ export default function FoundItemsPage() {
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>
-                    {item.createdAt ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() : 'N/A'}
+                    {item.createdAt ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString('en-US', { hour12: true, month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'N/A'}
                   </td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.userId}</td>
                   <td>

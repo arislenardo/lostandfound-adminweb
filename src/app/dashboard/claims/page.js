@@ -91,7 +91,7 @@ export default function ClaimsPage() {
             ) : (
               claims.map((claim) => {
                 const statusStyle = getStatusClass(claim.status);
-                const date = claim.timestamp ? new Date(claim.timestamp.toDate?.() || claim.timestamp).toLocaleString() : 'Unknown';
+                const date = claim.timestamp ? new Date(claim.timestamp.toDate?.() || claim.timestamp).toLocaleString('en-US', { hour12: true, month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'Unknown';
 
                 return (
                   <tr key={claim.id}>
