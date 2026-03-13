@@ -15,23 +15,46 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
   useEffect(() => {
     if (!isOpen || !user || !adminUser) return;
 
-    const q = query(
+    // Query 1: messages sent BY admin TO this user
+    const q1 = query(
       collection(db, 'messages'),
-      where('participants', 'array-contains', adminUser.uid),
+      where('senderId', '==', adminUser.uid),
+      where('receiverId', '==', user.id),
       orderBy('timestamp', 'asc')
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(m => 
-          (m.senderId === adminUser.uid && m.receiverId === user.id) ||
-          (m.senderId === user.id && m.receiverId === adminUser.uid)
-        );
-      setMessages(msgs);
+    // Query 2: messages sent BY this user TO admin (Android replies)
+    const q2 = query(
+      collection(db, 'messages'),
+      where('senderId', '==', user.id),
+      where('receiverId', '==', adminUser.uid),
+      orderBy('timestamp', 'asc')
+    );
+
+    let sent     = [];
+    let received = [];
+
+    const merge = () => {
+      const combined = [...sent, ...received];
+      combined.sort((a, b) => {
+        const ta = a.timestamp?.toDate?.() ?? new Date(0);
+        const tb = b.timestamp?.toDate?.() ?? new Date(0);
+        return ta - tb;
+      });
+      setMessages(combined);
+    };
+
+    const unsub1 = onSnapshot(q1, snap => {
+      sent = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      merge();
     });
 
-    return () => unsubscribe();
+    const unsub2 = onSnapshot(q2, snap => {
+      received = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      merge();
+    });
+
+    return () => { unsub1(); unsub2(); };
   }, [isOpen, user, adminUser]);
 
   useEffect(() => {

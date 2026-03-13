@@ -31,6 +31,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
 }
 
 .bubble p {
@@ -43,6 +45,7 @@
   align-self: flex-end;
   background: var(--accent);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom-right-radius: 4px;
 }
 
