@@ -91,7 +91,7 @@ The easiest way to deploy is via **Firebase Hosting**:
 ---
 ## 👥 Contributors
 - DAYOnamics
-- 
+  
 ## 📄 License
 
 This project is private and proprietary. Unauthorized copying, modification, or distribution is prohibited.
