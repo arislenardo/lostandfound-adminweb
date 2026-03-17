@@ -2,8 +2,8 @@ import { AuthProvider } from '@/components/AuthProvider';
 import './globals.css';
 
 export const metadata = {
-  title: 'PCR Admin Dashboard',
-  description: 'Lost and Found command center for Police Community Relations',
+  title: 'Balik-Calasiao Admin',
+  description: 'Consolidated Lost and Found command center for Balik-Calasiao',
 };
 
 export default function RootLayout({ children }) {

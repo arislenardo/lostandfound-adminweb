@@ -34,9 +34,9 @@ export default function Login() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <div className={styles.logoBadge}>PCR</div>
-          <h1 className={styles.title}>Admin Portal</h1>
-          <p className={styles.subtitle}>Lost & Found Command Center</p>
+          <div className={styles.logoBadge}>BC</div>
+          <h1 className={styles.title}>Balik-Calasiao</h1>
+          <p className={styles.subtitle}>Official Admin Command Center</p>
         </div>
 
         <form onSubmit={handleLogin} className={styles.form}>

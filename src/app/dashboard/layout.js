@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }) {
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <div className={styles.logoBadge}>PCR</div>
-          <h2>Admin Center</h2>
+          <h2>Balik-Calasiao Admin Center</h2>
         </div>
 
         <nav className={styles.nav}>

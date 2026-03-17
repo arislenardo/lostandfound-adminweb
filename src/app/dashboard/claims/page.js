@@ -15,12 +15,12 @@ export default function ClaimsPage() {
         const claimsRef = collection(db, 'claims');
         const q = query(claimsRef, orderBy('timestamp', 'desc'));
         const querySnapshot = await getDocs(q);
-        
+
         const fetchedClaims = querySnapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id
         }));
-        
+
         setClaims(fetchedClaims);
       } catch (error) {
         console.error("Error fetching claims:", error);
@@ -96,7 +96,7 @@ export default function ClaimsPage() {
                 return (
                   <tr key={claim.id}>
                     <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{claim.id.substring(0, 8)}...</td>
-                    <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{claim.itemId?.substring(0,8)}...</td>
+                    <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{claim.itemId?.substring(0, 8)}...</td>
                     <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{claim.userId}</td>
                     <td>
                       <span className={styles.badge} style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}>
@@ -107,15 +107,15 @@ export default function ClaimsPage() {
                     <td>
                       {claim.status === 'pending' ? (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button 
-                            className={styles.actionBtn} 
+                          <button
+                            className={styles.actionBtn}
                             style={{ borderColor: 'var(--success)', color: 'var(--success)' }}
                             onClick={() => handleUpdateStatus(claim.id, 'approved')}
                           >
                             Approve
                           </button>
-                          <button 
-                            className={styles.actionBtn} 
+                          <button
+                            className={styles.actionBtn}
                             style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
                             onClick={() => handleUpdateStatus(claim.id, 'rejected')}
                           >

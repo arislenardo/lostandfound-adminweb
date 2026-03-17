@@ -55,7 +55,7 @@ export default function DashboardOverview() {
     const month = now.toLocaleString('default', { month: 'long', year: 'numeric' });
 
     const rows = [
-      ['=== PCR Lost & Found Monthly Report ==='],
+      ['=== Balik-Calasiao Monthly Report ==='],
       [`Generated: ${now.toLocaleString()}`],
       [''],
       ['--- FOUND ITEMS ---'],
@@ -96,7 +96,7 @@ export default function DashboardOverview() {
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `PCR_LostFound_Report_${now.toISOString().slice(0,10)}.csv`;
+    link.download = `BalikCalasiao_Report_${now.toISOString().slice(0,10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
