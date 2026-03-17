@@ -161,6 +161,10 @@ export default function LostItemsPage() {
         onClose={() => { setIsModalOpen(false); setSelectedItem(null); }} 
         item={selectedItem}
         type="lost"
+        onUpdate={(itemId, updatedFields) => {
+          setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
+          setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
+        }}
       />
     </div>
   );

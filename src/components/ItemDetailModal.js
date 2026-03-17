@@ -1,10 +1,112 @@
+'use client';
+
+import { useState } from 'react';
 import styles from './modal.module.css';
 import Image from 'next/image';
+import { db, auth } from '@/lib/firebase';
+import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
-export default function ItemDetailModal({ isOpen, onClose, item, type }) {
+const CATEGORIES = ['electronics', 'wallet', 'keys', 'bags', 'other'];
+
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function toDateSafe(value) {
+  if (!value) return null;
+  return value.toDate ? value.toDate() : new Date(value);
+}
+
+function getLocationDisplay(item) {
+  if (item.locationName) return item.locationName;
+  if (item.latitude != null && item.longitude != null) return `Lat: ${item.latitude}, Lng: ${item.longitude}`;
+  return 'Not specified';
+}
+
+export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({});
+
   if (!isOpen || !item) return null;
 
-  const date = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleString() : 'Date Unknown';
+  const dateObj = toDateSafe(item.createdAt);
+  const date = dateObj ? dateObj.toLocaleString() : 'Date Unknown';
+
+  const foundStatuses = ['found', 'returned'];
+  const lostStatuses = ['lost', 'resolved'];
+  const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
+  const collectionName = type === 'found' ? 'found_items' : 'lost_items';
+
+  const handleStartEdit = () => {
+    setFormData({
+      name: item.name || '',
+      category: item.category || 'other',
+      description: item.description || '',
+      locationName: item.locationName || '',
+      status: item.status || statusOptions[0],
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setFormData({});
+  };
+
+  const handleSave = async () => {
+    if (!formData.name?.trim()) {
+      alert('Item name cannot be empty.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const adminUser = auth.currentUser;
+      await updateDoc(doc(db, collectionName, item.id), {
+        name: formData.name.trim(),
+        category: formData.category,
+        description: formData.description.trim(),
+        locationName: formData.locationName.trim(),
+        status: formData.status,
+      });
+      await addDoc(collection(db, 'admin_history'), {
+        adminId: adminUser?.uid || 'unknown',
+        adminName: adminUser?.email || 'Admin',
+        actionType: type === 'found' ? 'EDITED_FOUND_ITEM' : 'EDITED_LOST_ITEM',
+        itemTitle: formData.name.trim(),
+        itemId: item.id,
+        timestamp: serverTimestamp(),
+      });
+      if (onUpdate) {
+        onUpdate(item.id, {
+          name: formData.name.trim(),
+          category: formData.category,
+          description: formData.description.trim(),
+          locationName: formData.locationName.trim(),
+          status: formData.status,
+        });
+      }
+      setIsEditing(false);
+      setFormData({});
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert(`Failed to save changes: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.5rem 0.75rem',
+    borderRadius: '6px',
+    border: '1px solid var(--border)',
+    backgroundColor: 'var(--background)',
+    color: 'var(--text)',
+    fontSize: '0.9rem',
+    boxSizing: 'border-box',
+  };
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -36,24 +138,59 @@ export default function ItemDetailModal({ isOpen, onClose, item, type }) {
           <div className={styles.detailsSection}>
             <div className={styles.detailRow}>
               <span className={styles.label}>Name</span>
-              <span className={styles.value}>{item.name}</span>
+              {isEditing ? (
+                <input
+                  style={inputStyle}
+                  value={formData.name}
+                  onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
+                />
+              ) : (
+                <span className={styles.value}>{item.name}</span>
+              )}
             </div>
             
             <div className={styles.detailRow}>
               <span className={styles.label}>Category</span>
-              <span className={styles.value} style={{ textTransform: 'capitalize' }}>{item.category || 'Other'}</span>
+              {isEditing ? (
+                <select
+                  style={inputStyle}
+                  value={formData.category}
+                  onChange={e => setFormData(f => ({ ...f, category: e.target.value }))}
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>{capitalize(c)}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className={styles.value} style={{ textTransform: 'capitalize' }}>{item.category || 'Other'}</span>
+              )}
             </div>
 
             <div className={styles.detailRow}>
               <span className={styles.label}>Description</span>
-              <span className={styles.value}>{item.description || 'No description provided.'}</span>
+              {isEditing ? (
+                <textarea
+                  style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                  value={formData.description}
+                  onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                />
+              ) : (
+                <span className={styles.value}>{item.description || 'No description provided.'}</span>
+              )}
             </div>
 
             <div className={styles.detailRow}>
               <span className={styles.label}>Location</span>
-              <span className={styles.value}>
-                {item.locationName || `Lat: ${item.latitude}, Lng: ${item.longitude}` || 'Not specified'}
-              </span>
+              {isEditing ? (
+                <input
+                  style={inputStyle}
+                  value={formData.locationName}
+                  onChange={e => setFormData(f => ({ ...f, locationName: e.target.value }))}
+                  placeholder="Location name"
+                />
+              ) : (
+                <span className={styles.value}>{getLocationDisplay(item)}</span>
+              )}
             </div>
 
             <div className={styles.detailRow}>
@@ -68,9 +205,74 @@ export default function ItemDetailModal({ isOpen, onClose, item, type }) {
 
             <div className={styles.detailRow}>
               <span className={styles.label}>Status</span>
-              <span className={styles.value} style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>
-                {item.status || 'Active'}
-              </span>
+              {isEditing ? (
+                <select
+                  style={inputStyle}
+                  value={formData.status}
+                  onChange={e => setFormData(f => ({ ...f, status: e.target.value }))}
+                >
+                  {statusOptions.map(s => (
+                    <option key={s} value={s}>{capitalize(s)}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className={styles.value} style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>
+                  {item.status || 'Active'}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: 'var(--primary)',
+                      color: 'white',
+                      fontWeight: '600',
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      opacity: saving ? 0.7 : 1,
+                    }}
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={saving}
+                    style={{
+                      padding: '0.5rem 1.25rem',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleStartEdit}
+                  style={{
+                    padding: '0.5rem 1.25rem',
+                    borderRadius: '6px',
+                    border: '1px solid var(--primary)',
+                    backgroundColor: 'transparent',
+                    color: 'var(--primary)',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Edit Item
+                </button>
+              )}
             </div>
           </div>
         </div>
