@@ -1,6 +1,6 @@
 # 🔍 Balik-Calasiao: Lost & Found Admin Portal
 
-A professional, high-performance administrative dashboard for managing the **Balik-Calasiao** Lost & Found ecosystem. This application allows moderators and administrators to oversee lost and found reports, manage user claims, audit system activities, and maintain the integrity of the platform.
+A professional, high-performance administrative dashboard for managing the **Balik-Calasiao** Lost & Found app. This application allows administrators to oversee lost and found reports, manage user claims, audit system activities, and maintain the integrity of the platform.
 
 **🌐 Live Dashboard**: [https://lostandfound-e1333.web.app/dashboard](https://lostandfound-e1333.web.app/dashboard)
 
@@ -25,7 +25,7 @@ A professional, high-performance administrative dashboard for managing the **Bal
 - **Backend & DB**: [Firebase](https://firebase.google.com/)
   - **Firestore**: Scalable NoSQL real-time database.
   - **Auth**: Secure authentication and session management.
-  - **Storage**: Cloud storage for item images and attachments.
+  - **Storage**: Firebase Cloud storage for item images and attachments.
 - **Styling**: Vanilla CSS with CSS Modules for scoped, maintainable styles.
 - **Language**: [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) / [TypeScript](https://www.typescriptlang.org/)
 
