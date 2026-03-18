@@ -1,17 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './login.module.css';
 
-export default function Login() {
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Show error if redirected from AuthProvider with unauthorized status
+  useEffect(() => {
+    if (searchParams.get('error') === 'unauthorized_admin') {
+      setError('Access Denied: You must have admin credentials to access that page.');
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,12 +27,32 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // NOTE: We will verify if they exist in the `admins` collection 
-      // globally in a protected route wrapper, but for now we just log them in.
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Immediately check admin status to provide better feedback
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+
+      const adminDocRef = doc(db, 'admins', firebaseUser.uid);
+      const adminDoc = await getDoc(adminDocRef);
+
+      if (adminDoc.exists()) {
+        router.push('/dashboard');
+      } else {
+        setError(`Access Denied: Your account is not in the authorized admins list.`);
+        await auth.signOut();
+      }
     } catch (err) {
-      setError('Invalid email or password. You must have admin credentials.');
+      console.error('Login error:', err);
+      // Map Firebase error codes to user-friendly messages
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
+      } else {
+        setError('Authentication failed. Please verify your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -41,7 +69,7 @@ export default function Login() {
 
         <form onSubmit={handleLogin} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
-          
+
           <div className={styles.inputGroup}>
             <label htmlFor="email">Police Email</label>
             <input
@@ -66,19 +94,27 @@ export default function Login() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className={styles.loginButton} 
+          <button
+            type="submit"
+            className={styles.loginButton}
             disabled={loading}
           >
             {loading ? 'Authenticating...' : 'Secure Login'}
           </button>
         </form>
-        
+
         <div className={styles.footer}>
           Authorized access only. All actions are logged.
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={<div className={styles.container}>Loading authentication system...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

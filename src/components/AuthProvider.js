@@ -62,7 +62,8 @@ export function AuthProvider({ children }) {
       }
     } else {
       if (!isLoginPage) {
-        router.push('/login');
+        // Redirect to login with a specific error code
+        router.push('/login?error=unauthorized_admin');
       }
     }
   }, [user, isAdmin, loading, pathname, router]);
