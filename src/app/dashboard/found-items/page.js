@@ -49,6 +49,8 @@ export default function FoundItemsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
     async function fetchItems() {
@@ -66,6 +68,7 @@ export default function FoundItemsPage() {
   }, []);
 
   const filtered = useMemo(() => {
+    setCurrentPage(1); // Reset to page 1 on filter/search change
     return items.filter(item => {
       const matchesSearch = !search ||
         (item.name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -77,6 +80,13 @@ export default function FoundItemsPage() {
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }, [items, search, categoryFilter, statusFilter]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedItems = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleDeleteItem = async (itemId) => {
     const item = items.find(i => i.id === itemId);
@@ -103,7 +113,13 @@ export default function FoundItemsPage() {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <h2>Registry of Found Items</h2>
-        <span>{filtered.length} of {items.length} items</span>
+        <span>
+          {filtered.length > 0 ? (
+            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} found items`
+          ) : (
+            '0 items'
+          )}
+        </span>
       </div>
 
       <div className={styles.filterBar}>
@@ -136,10 +152,10 @@ export default function FoundItemsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {paginatedItems.length === 0 ? (
               <tr><td colSpan="7" className={styles.emptyState}>No items match your filters.</td></tr>
             ) : (
-              filtered.map(item => (
+              paginatedItems.map(item => (
                 <tr key={item.id}>
                   <td>
                     {item.imageUrl ? (
@@ -185,6 +201,30 @@ export default function FoundItemsPage() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <div className={styles.pageInfo}>
+            Page {currentPage} of {totalPages} ({filtered.length} items)
+          </div>
+          <div className={styles.pageControls}>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <ItemDetailModal
         isOpen={isModalOpen}

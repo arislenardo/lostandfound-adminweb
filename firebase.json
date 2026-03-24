@@ -1,11 +1,23 @@
 {
-  "hosting": {
-    "site": "balikcalasiao",
-    "source": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  }
+  "hosting": [
+    {
+      "site": "lostandfound-e1333",
+      "redirects": [
+        {
+          "source": "**",
+          "destination": "https://balikcalasiao.web.app",
+          "type": 301
+        }
+      ]
+    },
+    {
+      "site": "balikcalasiao",
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
 }

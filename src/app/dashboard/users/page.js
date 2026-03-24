@@ -8,6 +8,8 @@ import {
 } from 'firebase/firestore';
 import styles from '../table.module.css';
 import MessageUserModal from '@/components/MessageUserModal';
+import UserDetailModal from '@/components/UserDetailModal';
+
 
 const ROLE_FILTERS = ['All', 'Admin', 'Resident', 'Non-resident'];
 
@@ -31,9 +33,13 @@ export default function UsersPage() {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [isMsgModalOpen, setIsMsgModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
 
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(u => setAdminUser(u));
@@ -59,6 +65,7 @@ export default function UsersPage() {
   }, []);
 
   const filtered = useMemo(() => {
+    setCurrentPage(1); // Reset to page 1 on active filter/search
     return users.filter(user => {
       const isAdmin = adminIds.has(user.id);
       const isResident = !isAdmin && isResidentUser(user);
@@ -79,25 +86,12 @@ export default function UsersPage() {
     });
   }, [users, adminIds, search, roleFilter]);
 
-  const handleBanAccount = async (user) => {
-    const isBanned = user.banned === true;
-    const action = isBanned ? 'unban' : 'ban';
-    if (!window.confirm(`Are you sure you want to ${action} ${user.name || user.email || user.id}?`)) return;
-    try {
-      await updateDoc(doc(db, 'users', user.id), { banned: !isBanned });
-      await addDoc(collection(db, 'admin_history'), {
-        adminId: adminUser?.uid || 'unknown',
-        adminName: adminUser?.email || 'Admin',
-        actionType: isBanned ? 'UNBANNED_USER' : 'BANNED_USER',
-        itemTitle: user.name || user.email || user.id,
-        itemId: user.id,
-        timestamp: serverTimestamp(),
-      });
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, banned: !isBanned } : u));
-    } catch (error) {
-      alert(`Failed to ${action} user: ${error.message}`);
-    }
-  };
+  // Pagination Logic
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleToggleAdmin = async (user) => {
     const isAdmin = adminIds.has(user.id);
@@ -146,7 +140,13 @@ export default function UsersPage() {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <h2>Registered User Profiles</h2>
-        <span>{filtered.length} of {users.length} users</span>
+        <span>
+          {filtered.length > 0 ? (
+            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} users`
+          ) : (
+            '0 users'
+          )}
+        </span>
       </div>
 
       <div className={styles.filterBar}>
@@ -170,20 +170,19 @@ export default function UsersPage() {
               <th>Email Address</th>
               <th>Phone</th>
               <th>Role</th>
-              <th>Account Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
-              <tr><td colSpan="6" className={styles.emptyState}>No users found.</td></tr>
+            {paginatedUsers.length === 0 ? (
+              <tr><td colSpan="5" className={styles.emptyState}>No users found.</td></tr>
             ) : (
-              filtered.map(user => {
+              paginatedUsers.map(user => {
                 const isAdmin = adminIds.has(user.id);
                 return (
                   <tr key={user.id}>
                     <td style={{ fontWeight: '600' }}>{user.name || 'N/A'}</td>
-                    <td style={{ fontSize: '0.875rem' }}>{user.email || 'N/A'}</td>
+                    <td style={{ fontSize: '0.875rem', wordBreak: 'break-all', minWidth: '150px' }}>{user.email || 'N/A'}</td>
                     <td style={{ fontSize: '0.875rem' }}>{user.phoneNumber || 'N/A'}</td>
                     <td>
                       <span className={`${styles.badge} ${getRoleBadgeClass(user)}`}>
@@ -191,24 +190,12 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>
-                      <span className={`${styles.badge} ${user.banned ? styles.statusBanned : styles.statusActive}`}>
-                        {user.banned ? 'Banned' : 'Active'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button className={styles.actionBtn} onClick={() => { setSelectedUser(user); setIsDetailModalOpen(true); }}>
+                          Details
+                        </button>
                         <button className={styles.actionBtn} onClick={() => { setSelectedUser(user); setIsMsgModalOpen(true); }}>
                           Message
-                        </button>
-                        <button
-                          className={styles.actionBtn}
-                          style={{
-                            borderColor: user.banned ? 'var(--success)' : 'var(--error)',
-                            color: user.banned ? 'var(--success-dark)' : '#b91c1c',
-                          }}
-                          onClick={() => handleBanAccount(user)}
-                        >
-                          {user.banned ? 'Unban' : 'Ban'}
                         </button>
                         <button
                           className={styles.actionBtn}
@@ -218,7 +205,7 @@ export default function UsersPage() {
                           }}
                           onClick={() => handleToggleAdmin(user)}
                         >
-                          {isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                          {isAdmin ? 'Revoke' : 'Make Admin'}
                         </button>
                       </div>
                     </td>
@@ -230,11 +217,43 @@ export default function UsersPage() {
         </table>
       </div>
 
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <div className={styles.pageInfo}>
+            Page {currentPage} of {totalPages} ({filtered.length} users)
+          </div>
+          <div className={styles.pageControls}>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       <MessageUserModal
         isOpen={isMsgModalOpen}
         onClose={() => { setIsMsgModalOpen(false); setSelectedUser(null); }}
         user={selectedUser}
         adminUser={adminUser}
+      />
+
+      <UserDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => { setIsDetailModalOpen(false); setSelectedUser(null); }}
+        user={selectedUser}
+        adminIds={adminIds}
+        onToggleAdmin={handleToggleAdmin}
       />
     </div>
   );

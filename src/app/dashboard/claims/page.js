@@ -86,7 +86,7 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
   );
 }
 
-const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected'];
+const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned'];
 
 export default function ClaimsPage() {
   const [claims, setClaims] = useState([]);
@@ -94,13 +94,24 @@ export default function ClaimsPage() {
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
     async function fetchClaims() {
       try {
-        const q = query(collection(db, 'claims'), orderBy('timestamp', 'desc'));
-        const snap = await getDocs(q);
-        setClaims(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+        // Fetch all claims without orderBy to avoid exclusion of docs without timestamp
+        const snap = await getDocs(collection(db, 'claims'));
+        const allClaims = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        
+        // Sort in-memory to be more robust
+        allClaims.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp || 0);
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : (b.timestamp || 0);
+          return timeB - timeA;
+        });
+
+        setClaims(allClaims);
       } catch (error) {
         console.error("Error fetching claims:", error);
       } finally {
@@ -111,15 +122,45 @@ export default function ClaimsPage() {
   }, []);
 
   const filteredClaims = useMemo(() => {
+    setCurrentPage(1); // Reset page on filter change
     if (statusFilter === 'All') return claims;
     return claims.filter(c => (c.status || 'pending').toLowerCase() === statusFilter);
   }, [claims, statusFilter]);
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredClaims.length / ITEMS_PER_PAGE);
+  const paginatedClaims = filteredClaims.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const handleUpdateStatus = async (claimId, newStatus) => {
     const claim = claims.find(c => c.id === claimId);
     const adminUser = auth.currentUser;
+    if (!claim) return;
+
     try {
-      await updateDoc(doc(db, 'claims', claimId), { status: newStatus });
+      // 1. Update the claim document
+      await updateDoc(doc(db, 'claims', claimId), { 
+        status: newStatus,
+        resolvedAt: serverTimestamp(),
+        resolvedBy: adminUser?.uid || 'admin'
+      });
+
+      // 2. If approved, ALSO update the items in found_items/lost_items
+      if (newStatus === 'approved' && claim.itemId) {
+        await updateDoc(doc(db, 'found_items', claim.itemId), { status: 'returned' });
+        
+        // If it was a manual match or has lostItemId, resolve that too
+        if (claim.lostItemId) {
+          await updateDoc(doc(db, 'lost_items', claim.lostItemId), { 
+            status: 'resolved',
+            claimedFoundItemId: claim.itemId 
+          });
+        }
+      }
+
+      // 3. Log to admin history
       await addDoc(collection(db, 'admin_history'), {
         adminId: adminUser?.uid || 'unknown',
         adminName: adminUser?.email || 'Admin',
@@ -128,8 +169,11 @@ export default function ClaimsPage() {
         itemId: claim?.itemId || claimId,
         timestamp: serverTimestamp(),
       });
+
       setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: newStatus } : c));
+      alert(`Claim ${newStatus} successfully.`);
     } catch (error) {
+      console.error("Error updating claim:", error);
       alert(`Failed to update claim: ${error.message}`);
     }
   };
@@ -141,7 +185,7 @@ export default function ClaimsPage() {
 
   const getStatusClass = (status) => {
     const s = (status || 'pending').toLowerCase();
-    if (s === 'approved') return `${styles.badge} ${styles.statusApproved}`;
+    if (s === 'approved' || s === 'returned') return `${styles.badge} ${styles.statusApproved}`;
     if (s === 'rejected') return `${styles.badge} ${styles.statusRejected}`;
     return `${styles.badge} ${styles.statusPending}`;
   };
@@ -152,7 +196,13 @@ export default function ClaimsPage() {
     <div className={styles.pageContainer}>
       <div className={styles.header}>
         <h2>Claim Resolution Hub</h2>
-        <span>{filteredClaims.length} of {claims.length} claims</span>
+        <span>
+          {filteredClaims.length > 0 ? (
+            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredClaims.length)} of ${filteredClaims.length} claims`
+          ) : (
+            '0 claims'
+          )}
+        </span>
       </div>
 
       {/* Filter Bar */}
@@ -177,10 +227,10 @@ export default function ClaimsPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredClaims.length === 0 ? (
+            {paginatedClaims.length === 0 ? (
               <tr><td colSpan="6" className={styles.emptyState}>No claims found.</td></tr>
             ) : (
-              filteredClaims.map(claim => {
+              paginatedClaims.map(claim => {
                 const date = claim.timestamp
                   ? new Date(claim.timestamp.toDate?.() || claim.timestamp).toLocaleString('en-US', { hour12: true, month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })
                   : 'Unknown';
@@ -197,7 +247,7 @@ export default function ClaimsPage() {
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {claim.status === 'pending' || !claim.status ? (
+                        {claim.status === 'pending' || !claim.status || claim.status === 'claim_pending' ? (
                           <>
                             <button
                               className={styles.actionBtn}
@@ -230,6 +280,30 @@ export default function ClaimsPage() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <div className={styles.pageInfo}>
+            Page {currentPage} of {totalPages} ({filteredClaims.length} records)
+          </div>
+          <div className={styles.pageControls}>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <button 
+              className={styles.pageBtn} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <ClaimDetailModal
         isOpen={isDetailOpen}
