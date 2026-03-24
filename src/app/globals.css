@@ -1,28 +1,55 @@
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --surface: #ffffff;
-  --border: #e2e8f0;
-  --text-muted: #64748b;
-  --error: #ef4444;
-  --success: #22c55e;
-  --border-radius: 8px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
+/* =============================================
+   Balik-Calasiao – Design System
+   Palette sourced from mobile app for consistency
+   ============================================= */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    --primary: #3b82f6;
-    --primary-hover: #60a5fa;
-    --surface: #1e293b;
-    --border: #334155;
-    --text-muted: #94a3b8;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Mobile App Heritage Palette */
+  --cream:       #FDF8F0;
+  --white:       #FFFCF9;
+  --brown:       #5C3D1E;
+  --gold:        #D4A017;
+  --gold-light:  #F4C430;
+  --ube:         #8D5BA1;
+  --ube-light:   #A67BB8;
+  --green-app:   #40916C;
+
+  /* Semantic UI Variables (mapped to palette) */
+  --background:    var(--cream);
+  --surface:       var(--white);
+  --foreground:    var(--brown);
+  --primary:       var(--green-app);
+  --primary-hover: #2D6A4F;
+  --border:        #E8DDD0;
+  --text-muted:    #8B7355;
+
+  /* Compatibility with old components */
+  --bg-primary:    var(--cream);
+  --bg-card:       var(--white);
+  --text-primary:  var(--brown);
+  --text-secondary: var(--text-muted);
+  --text:          var(--foreground);
+  --accent:        var(--primary);
+  --accent-light:  rgba(64, 145, 108, 0.1);
+  --modal-overlay: rgba(92, 61, 30, 0.45);
+
+  /* Standard Status Colors (unchanged, for clarity) */
+  --success:       #22c55e;
+  --success-light: rgba(34, 197, 94, 0.12);
+  --success-dark:  #166534;
+  --error:         #ef4444;
+  --error-light:   rgba(239, 68, 68, 0.12);
+  --warning:       #f97316;
+  --warning-light: rgba(249, 115, 22, 0.12);
+  --info:          #3b82f6;
+  --info-light:    rgba(59, 130, 246, 0.12);
+
+  /* Layout */
+  --border-radius: 8px;
+  --shadow:        0 4px 6px -1px rgba(92, 61, 30, 0.08), 0 2px 4px -2px rgba(92, 61, 30, 0.05);
+  --shadow-lg:     0 10px 15px -3px rgba(92, 61, 30, 0.1), 0 4px 6px -4px rgba(92, 61, 30, 0.06);
 }
 
 * {
@@ -35,9 +62,10 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -52,6 +80,6 @@ button {
   font-family: inherit;
 }
 
-input {
+input, select, textarea {
   font-family: inherit;
 }

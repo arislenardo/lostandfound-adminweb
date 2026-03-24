@@ -53,23 +53,43 @@ export default function DashboardOverview() {
   const handleExportReport = () => {
     const now = new Date();
     const month = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const pendingCount = allData.claims.filter(c => (c.status || '').toLowerCase() === 'pending').length;
+    const approvedCount = allData.claims.filter(c => (c.status || '').toLowerCase() === 'approved').length;
+    const rejectedCount = allData.claims.filter(c => (c.status || '').toLowerCase() === 'rejected').length;
+    const returnedCount = allData.found.filter(i => (i.status || '').toLowerCase() === 'returned').length;
 
     const rows = [
-      ['=== Balik-Calasiao Monthly Report ==='],
-      [`Generated: ${now.toLocaleString()}`],
-      [''],
-      ['--- FOUND ITEMS ---'],
-      ['ID', 'Name', 'Category', 'Status', 'Finder UID', 'Date Created'],
+      // ── Summary ──
+      [`=== BALIK-CALASIAO LOST & FOUND — MONTHLY REPORT ===`],
+      [`Report Month: ${month}`],
+      [`Generated On: ${now.toLocaleString()}`],
+      [``],
+      [`--- SUMMARY ---`],
+      [`Total Found Items Reported`, allData.found.length],
+      [`Total Lost Items Reported`,  allData.lost.length],
+      [`Items Successfully Returned`, returnedCount],
+      [`Total Claims Filed`,          allData.claims.length],
+      [`  ↳ Approved`,               approvedCount],
+      [`  ↳ Pending`,                pendingCount],
+      [`  ↳ Rejected`,               rejectedCount],
+      [``],
+
+      // ── Found Items ──
+      [`--- FOUND ITEMS ---`],
+      ['ID', 'Name', 'Category', 'Status', 'Location', 'Finder UID', 'Date Reported'],
       ...allData.found.map(i => [
         i.id,
         i.name || '',
         i.category || '',
         i.status || '',
+        i.locationName || '',
         i.userId || '',
         i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleString('en-US', { hour12: true }) : '',
       ]),
-      [''],
-      ['--- LOST ITEMS ---'],
+      [``],
+
+      // ── Lost Items ──
+      [`--- LOST ITEMS ---`],
       ['ID', 'Name', 'Category', 'Status', 'Owner UID', 'Date Reported'],
       ...allData.lost.map(i => [
         i.id,
@@ -79,24 +99,32 @@ export default function DashboardOverview() {
         i.userId || '',
         i.createdAt ? new Date(i.createdAt.toDate?.() || i.createdAt).toLocaleString('en-US', { hour12: true }) : '',
       ]),
-      [''],
-      ['--- CLAIMS ---'],
-      ['ID', 'Found Item ID', 'Claimant UID', 'Status', 'Date Filed'],
+      [``],
+
+      // ── Claims ──
+      [`--- CLAIMS ---`],
+      ['Claim ID', 'Found Item ID', 'Claimant UID', 'Status', 'Manual Match', 'Date Filed'],
       ...allData.claims.map(c => [
         c.id,
         c.itemId || '',
         c.userId || '',
         c.status || '',
+        c.manualMatch ? 'Yes' : 'No',
         c.timestamp ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString('en-US', { hour12: true }) : '',
       ]),
     ];
 
-    const csv = rows.map(r => r.join ? r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') : r[0]).join('\n');
+    const csv = rows.map(r =>
+      Array.isArray(r) && r.length > 1
+        ? r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+        : (r[0] || '')
+    ).join('\n');
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BalikCalasiao_Report_${now.toISOString().slice(0,10)}.csv`;
+    link.download = `BalikCalasiao_Report_${now.toISOString().slice(0,7)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };

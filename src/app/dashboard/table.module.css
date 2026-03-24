@@ -8,14 +8,68 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .header h2 {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--foreground);
 }
 
+.header span {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Filter bar */
+.filterBar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 0.75rem 1rem;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  background: var(--background);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+}
+
+.filterSelect {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  background: var(--background);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.filterSelect:focus {
+  border-color: var(--primary);
+}
+
+/* Table */
 .tableWrapper {
   background-color: var(--surface);
   border: 1px solid var(--border);
@@ -31,23 +85,19 @@
 }
 
 .table th {
-  padding: 1rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
   border-bottom: 2px solid var(--border);
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-@media (prefers-color-scheme: dark) {
-  .table th {
-    background-color: rgba(255, 255, 255, 0.02);
-  }
+  background-color: rgba(92, 61, 30, 0.03);
+  white-space: nowrap;
 }
 
 .table td {
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   font-size: 0.875rem;
   color: var(--foreground);
   border-bottom: 1px solid var(--border);
@@ -55,68 +105,118 @@
 }
 
 .table tbody tr {
-  transition: background-color 0.2s ease;
+  transition: background-color 0.15s ease;
 }
 
 .table tbody tr:hover {
-  background-color: rgba(59, 130, 246, 0.05);
+  background-color: rgba(212, 160, 23, 0.04);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ID cells */
+.idCell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
 }
 
 .itemImage {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   object-fit: cover;
   background-color: var(--border);
+  border: 1px solid var(--border);
 }
 
 .noImage {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
-  background-color: var(--border);
+  background-color: rgba(92, 61, 30, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
-.badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  text-transform: capitalize;
+  border: 1px dashed var(--border);
 }
 
-.badge.electronics {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+/* ── Status Badges ── */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
-.badge.wallet {
-  background-color: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
+/* Status — standalone classes to work correctly with CSS Modules */
+.statusApproved,
+.statusReturned,
+.statusResolved,
+.statusClaimed {
+  background-color: var(--success-light);
+  color: var(--success-dark);
 }
 
-.badge.keys {
-  background-color: rgba(234, 179, 8, 0.1);
-  color: #eab308;
+.statusPending {
+  background-color: var(--warning-light);
+  color: #c2410c;
 }
 
-.badge.bags {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+.statusRejected,
+.statusBanned {
+  background-color: var(--error-light);
+  color: #b91c1c;
 }
 
-.badge.other {
-  background-color: var(--border);
+.statusAdded,
+.statusFound,
+.statusLost,
+.statusActive {
+  background-color: var(--info-light);
+  color: #1d4ed8;
+}
+
+/* Category badges — neutral, no category-specific colors */
+.categoryBadge {
+  background-color: rgba(92, 61, 30, 0.07);
   color: var(--text-muted);
+  border: 1px solid rgba(92, 61, 30, 0.12);
 }
 
+/* Role badges */
+.roleAdmin {
+  background-color: rgba(64, 145, 108, 0.12);
+  color: var(--primary);
+}
+
+.roleResident {
+  background-color: rgba(212, 160, 23, 0.12);
+  color: #92400e;
+}
+
+.roleNonResident {
+  background-color: rgba(141, 91, 161, 0.12);
+  color: var(--ube);
+}
+
+/* Action buttons */
 .actionBtn {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.875rem;
   background-color: transparent;
   color: var(--primary);
   border: 1px solid var(--primary);
@@ -124,6 +224,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .actionBtn:hover {
@@ -135,4 +236,5 @@
   padding: 3rem;
   text-align: center;
   color: var(--text-muted);
+  font-size: 0.9rem;
 }

@@ -2,7 +2,7 @@
 
 A professional, high-performance administrative dashboard for managing the **Balik-Calasiao** Lost & Found app. This application allows administrators to oversee lost and found reports, manage user claims, audit system activities, and maintain the integrity of the platform.
 
-**🌐 Live Dashboard**: [https://lostandfound-e1333.web.app/dashboard](https://lostandfound-e1333.web.app/dashboard)
+**🌐 Live Dashboard**: [https://balikcalasiao.web.app/](https://balikcalasiao.web.app/)
 
 ---
 

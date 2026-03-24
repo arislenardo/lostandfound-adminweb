@@ -35,17 +35,18 @@
 }
 
 .logoBadge {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--green-app), #2D6A4F);
   color: white;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: var(--shadow);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 12px rgba(64, 145, 108, 0.35);
 }
 
 .sidebarHeader h2 {
@@ -71,14 +72,14 @@
 }
 
 .navItem:hover {
-  background-color: rgba(59, 130, 246, 0.05);
+  background-color: rgba(64, 145, 108, 0.08);
   color: var(--primary);
 }
 
 .navItem.active {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(64, 145, 108, 0.14);
   color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .sidebarFooter {
@@ -103,15 +104,15 @@
 }
 
 .roleBadge {
-  font-size: 0.75rem;
-  color: var(--primary);
-  background-color: rgba(59, 130, 246, 0.1);
-  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--white);
+  background-color: var(--green-app);
+  padding: 0.2rem 0.6rem;
   border-radius: 4px;
   width: fit-content;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
 }
 
 .logoutBtn {

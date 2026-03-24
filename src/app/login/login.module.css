@@ -3,20 +3,15 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--background) 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--cream) 0%, #E8DFD0 100%);
   padding: 1rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  .container {
-    background: linear-gradient(135deg, var(--background) 0%, #020617 100%);
-  }
-}
 
 .card {
   background-color: var(--surface);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 40px rgba(92, 61, 30, 0.12);
   padding: 2.5rem 2rem;
   width: 100%;
   max-width: 400px;
@@ -29,18 +24,19 @@
 }
 
 .logoBadge {
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--green-app), #2D6A4F);
   color: white;
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   margin: 0 auto 1rem;
-  box-shadow: var(--shadow);
+  box-shadow: 0 6px 20px rgba(64, 145, 108, 0.35);
 }
 
 .title {
@@ -96,7 +92,7 @@
 .inputGroup input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
 }
 
 .loginButton {

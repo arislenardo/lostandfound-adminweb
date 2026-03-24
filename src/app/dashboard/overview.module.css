@@ -87,12 +87,12 @@
 }
 
 .actionBtn {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(64, 145, 108, 0.1);
   color: var(--primary);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(64, 145, 108, 0.25);
   padding: 0.75rem 1.5rem;
   border-radius: var(--border-radius);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.2s ease;
 }
@@ -100,4 +100,5 @@
 .actionBtn:hover {
   background-color: var(--primary);
   color: white;
+  box-shadow: 0 4px 12px rgba(64, 145, 108, 0.3);
 }
