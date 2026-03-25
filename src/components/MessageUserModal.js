@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { sendNewMessageNotification } from '@/lib/emailService';
 import styles from './modal.module.css';
 import msgStyles from './message.module.css';
 
@@ -89,9 +90,29 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
         timestamp: serverTimestamp(),
         isRead: false,
       });
+
+      // --- TRIGGER EMAIL NOTIFICATION TO USER ---
+      if (user.email) {
+        console.log('Attempting to send email to:', user.email);
+        const success = await sendNewMessageNotification(
+          user.email,
+          adminUser.email || 'Official Station Admin',
+          newMessage.trim()
+        );
+        if (!success) {
+          alert('Message sent successfully, but EMAIL ALERT FAILED. Check server logs.');
+        } else {
+          console.log('Email alert triggered successfully.');
+        }
+      } else {
+        console.warn('User has no email registered. Skipping email alert.');
+      }
+      // ------------------------------------------
+
       setNewMessage('');
     } catch (e) {
       console.error('Failed to send message:', e);
+      alert('Failed to send message: ' + e.message);
     } finally {
       setSending(false);
     }

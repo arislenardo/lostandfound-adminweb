@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { sendClaimStatusNotification } from '@/lib/emailService';
 import styles from '../table.module.css';
 
 function ClaimDetailModal({ isOpen, onClose, claim }) {
@@ -169,6 +170,15 @@ export default function ClaimsPage() {
         itemId: claim?.itemId || claimId,
         timestamp: serverTimestamp(),
       });
+
+      // 4. Trigger email notification to the claimant
+      if (claim.userEmail) {
+        await sendClaimStatusNotification(
+          claim.userEmail,
+          claim.itemName || "Item",
+          newStatus
+        );
+      }
 
       setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: newStatus } : c));
       alert(`Claim ${newStatus} successfully.`);

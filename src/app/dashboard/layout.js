@@ -6,13 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  PackageCheck, 
-  PackageMinus, 
-  ClipboardList, 
-  Users, 
-  History, 
+import {
+  LayoutDashboard,
+  PackageCheck,
+  PackageMinus,
+  ClipboardList,
+  Users,
+  History,
   LogOut,
   Bell,
   CheckCircle,
@@ -36,8 +36,8 @@ export default function DashboardLayout({ children }) {
 
     // 1. Listen for new/pending claims (No orderBy to match phone app)
     const qClaims = query(
-      collection(db, 'claims'), 
-      where('status', 'in', ['pending', 'disputed']), 
+      collection(db, 'claims'),
+      where('status', 'in', ['pending', 'disputed']),
       limit(20)
     );
 
@@ -63,14 +63,14 @@ export default function DashboardLayout({ children }) {
       allNotifs.claims = snap.docs.map(doc => {
         const data = doc.data();
         const type = data.status === 'disputed' ? 'dispute' : 'claim';
-        const docTime = data.timestamp?.toDate?.() || 
-                        (data.timestamp instanceof Date ? data.timestamp : new Date());
+        const docTime = data.timestamp?.toDate?.() ||
+          (data.timestamp instanceof Date ? data.timestamp : new Date());
         return {
           id: doc.id,
           type: type,
-          message: type === 'dispute' 
+          message: type === 'dispute'
             ? `Dispute: Claim #${doc.id.slice(-4)} re-opened`
-            : `New claim: ${data.itemName || 'Item #'+doc.id.slice(-4)}`,
+            : `New claim: ${data.itemName || 'Item #' + doc.id.slice(-4)}`,
           time: docTime,
           unread: true,
           link: '/dashboard/claims'
@@ -82,8 +82,8 @@ export default function DashboardLayout({ children }) {
     const unsubMessages = onSnapshot(qMessages, (snap) => {
       allNotifs.messages = snap.docs.map(doc => {
         const data = doc.data();
-        const docTime = data.timestamp?.toDate?.() || 
-                        (data.timestamp instanceof Date ? data.timestamp : new Date());
+        const docTime = data.timestamp?.toDate?.() ||
+          (data.timestamp instanceof Date ? data.timestamp : new Date());
         return {
           id: doc.id,
           type: 'message',
@@ -186,7 +186,7 @@ export default function DashboardLayout({ children }) {
 
           <div className={styles.topbarRight}>
             <div className={styles.notificationWrapper}>
-              <button 
+              <button
                 className={`${styles.topbarAction} ${showNotifications ? styles.activeAction : ''}`}
                 onClick={() => setShowNotifications(!showNotifications)}
               >
@@ -203,18 +203,18 @@ export default function DashboardLayout({ children }) {
                   <div className={styles.dropdownContent}>
                     {notifications.length > 0 ? (
                       notifications.map(n => (
-                        <div 
-                          key={n.id} 
+                        <div
+                          key={n.id}
                           className={styles.notificationItem}
                           onClick={() => {
                             setShowNotifications(false);
                             router.push(n.link || '/dashboard');
                           }}
                         >
-                          <div className={styles.notifIcon} style={{ 
-                            backgroundColor: n.type === 'dispute' ? 'rgba(239, 68, 68, 0.1)' : 
-                                            n.type === 'message' ? 'rgba(59, 130, 246, 0.1)' : 
-                                            'rgba(64, 145, 108, 0.1)' 
+                          <div className={styles.notifIcon} style={{
+                            backgroundColor: n.type === 'dispute' ? 'rgba(239, 68, 68, 0.1)' :
+                              n.type === 'message' ? 'rgba(59, 130, 246, 0.1)' :
+                                'rgba(64, 145, 108, 0.1)'
                           }}>
                             {n.type === 'dispute' && <AlertCircle size={16} color="#ef4444" />}
                             {n.type === 'message' && <TrendingUp size={16} color="#3b82f6" />}

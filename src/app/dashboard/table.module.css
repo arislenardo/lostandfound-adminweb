@@ -71,11 +71,11 @@
 
 /* Table */
 .tableWrapper {
-  background-color: var(--surface);
+  background-color: white;
   border: 1px solid var(--border);
-  border-radius: var(--border-radius);
-  overflow-x: auto;
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
 }
 
 .table {
@@ -85,31 +85,32 @@
 }
 
 .table th {
-  padding: 0.75rem 0.75rem;
-  font-size: 0.7rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
-  border-bottom: 2px solid var(--border);
-  background-color: rgba(92, 61, 30, 0.03);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--cream);
   white-space: nowrap;
 }
 
 .table td {
-  padding: 0.75rem 0.75rem;
+  padding: 1rem 1.25rem;
   font-size: 0.875rem;
-  color: var(--foreground);
+  color: var(--brown);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 .table tbody tr {
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .table tbody tr:hover {
-  background-color: rgba(212, 160, 23, 0.04);
+  background-color: var(--cream);
+  transform: scale(1.002);
 }
 
 .table tbody tr:last-child td {

@@ -207,7 +207,31 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   placeholder="Location name"
                 />
               ) : (
-                <span className={styles.value}>{getLocationDisplay(item)}</span>
+                <div className={styles.value}>
+                  {item.latitude != null && item.longitude != null ? (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.mapLink}
+                    >
+                      📍 {item.locationName || `Lat: ${item.latitude}, Lng: ${item.longitude}`}
+                      <span className={styles.externalHint}>(Open Maps)</span>
+                    </a>
+                  ) : item.locationName ? (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.locationName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.mapLink}
+                    >
+                      📍 {item.locationName}
+                      <span className={styles.externalHint}>(Search Maps)</span>
+                    </a>
+                  ) : (
+                    'Not specified'
+                  )}
+                </div>
               )}
             </div>
 
@@ -246,25 +270,17 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    style={{
-                      padding: '0.5rem 1.25rem',
-                      borderRadius: '6px',
-                      border: 'none',
-                      backgroundColor: 'var(--primary)',
-                      color: 'white',
-                      fontWeight: '600',
-                      cursor: saving ? 'not-allowed' : 'pointer',
-                      opacity: saving ? 0.7 : 1,
-                    }}
+                    className={styles.saveBtn}
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
                     onClick={handleCancel}
                     disabled={saving}
+                    className={styles.cancelBtn}
                     style={{
                       padding: '0.5rem 1.25rem',
-                      borderRadius: '6px',
+                      borderRadius: '12px',
                       border: '1px solid var(--border)',
                       backgroundColor: 'transparent',
                       color: 'var(--text-muted)',
@@ -278,15 +294,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
               ) : (
                 <button
                   onClick={handleStartEdit}
-                  style={{
-                    padding: '0.5rem 1.25rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--primary)',
-                    backgroundColor: 'transparent',
-                    color: 'var(--primary)',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                  }}
+                  className={styles.editBtn}
                 >
                   Edit Item
                 </button>
