@@ -181,6 +181,7 @@ export default function DashboardLayout({ children }) {
             <h1>{currentPage}</h1>
             <div className={styles.breadcrumb}>
               Admin / <span>{currentPage}</span>
+              <span className={styles.stationBadge}>Calasiao Police Station</span>
             </div>
           </div>
 
