@@ -26,6 +26,16 @@ const CATEGORIES = [
   'Others',
 ];
 
+const STATUS_LABELS = {
+  'found': 'FOUND',
+  'lost': 'LOST',
+  'pending': 'PENDING',
+  'claim_pending': 'CLAIM PENDING',
+  'resolved': 'RESOLVED',
+  'returned': 'RETURNED',
+  'added': 'ADDED'
+};
+
 function capitalize(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -53,7 +63,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
   const date = dateObj ? dateObj.toLocaleString() : 'Date Unknown';
 
   const foundStatuses = ['found', 'returned'];
-  const lostStatuses = ['lost', 'resolved'];
+  const lostStatuses = ['lost', 'resolved', 'returned'];
   const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
   const collectionName = type === 'found' ? 'found_items' : 'lost_items';
 
@@ -254,12 +264,12 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   onChange={e => setFormData(f => ({ ...f, status: e.target.value }))}
                 >
                   {statusOptions.map(s => (
-                    <option key={s} value={s}>{capitalize(s)}</option>
+                    <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s.toUpperCase()}</option>
                   ))}
                 </select>
               ) : (
-                <span className={styles.value} style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>
-                  {item.status || 'Active'}
+                <span className={styles.value} style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  {STATUS_LABELS[(item.status || 'active').toLowerCase()] || item.status || 'ACTIVE'}
                 </span>
               )}
             </div>

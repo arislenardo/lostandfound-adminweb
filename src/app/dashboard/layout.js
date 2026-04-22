@@ -17,7 +17,7 @@ import {
   Bell,
   CheckCircle,
   AlertCircle,
-  TrendingUp
+  MessageSquare
 } from 'lucide-react';
 import styles from './dashboard.module.css';
 import { db } from '@/lib/firebase';
@@ -136,7 +136,9 @@ export default function DashboardLayout({ children }) {
       {/* Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <div className={styles.logoBadge}>PNP</div>
+          <div className={styles.logoBadge}>
+            <img src="/app-logo.webp" alt="App Logo" className={styles.logoImage} />
+          </div>
           <div className={styles.brandInfo}>
             <h2>Balik-Calasiao</h2>
             <span>Admin Center</span>
@@ -218,7 +220,7 @@ export default function DashboardLayout({ children }) {
                                 'rgba(64, 145, 108, 0.1)'
                           }}>
                             {n.type === 'dispute' && <AlertCircle size={16} color="#ef4444" />}
-                            {n.type === 'message' && <TrendingUp size={16} color="#3b82f6" />}
+                            {n.type === 'message' && <MessageSquare size={16} color="#3b82f6" />}
                             {n.type === 'claim' && <CheckCircle size={16} color="var(--primary)" />}
                           </div>
                           <div className={styles.notifInfo}>

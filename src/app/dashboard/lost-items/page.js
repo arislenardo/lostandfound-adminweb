@@ -28,7 +28,14 @@ const CATEGORIES = [
   'Others',
 ];
 
-const STATUSES = ['All', 'lost', 'pending', 'claim_pending', 'resolved'];
+const STATUS_LABELS = {
+  'lost': 'Lost',
+  'pending': 'Pending',
+  'claim_pending': 'Claim Pending',
+  'resolved': 'Resolved',
+  'returned': 'Returned',
+  'all': 'All Statuses'
+};
 
 function getStatusStyle(status) {
   const s = (status || '').toLowerCase();
@@ -133,7 +140,9 @@ export default function LostItemsPage() {
           {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
         </select>
         <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          {STATUSES.map(s => <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+          {['All', 'lost', 'pending', 'claim_pending', 'resolved', 'returned'].map(s => (
+            <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+          ))}
         </select>
       </div>
 
@@ -171,7 +180,7 @@ export default function LostItemsPage() {
                   </td>
                   <td>
                     <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
-                      {item.status || 'Lost'}
+                      {STATUS_LABELS[(item.status || 'lost').toLowerCase()] || item.status}
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
@@ -207,15 +216,15 @@ export default function LostItemsPage() {
             Page {currentPage} of {totalPages} ({filtered.length} reports)
           </div>
           <div className={styles.pageControls}>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
             >
               Previous
             </button>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >

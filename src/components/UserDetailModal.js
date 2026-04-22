@@ -66,27 +66,6 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
               </span>
             </div>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }}>
-            <button 
-              className={isAdmin ? 'btnSecondary' : 'btnPrimary'} 
-              style={{
-                padding: '0.75rem',
-                borderRadius: '8px',
-                border: '1px solid var(--primary)',
-                background: isAdmin ? 'transparent' : 'var(--primary)',
-                color: isAdmin ? 'var(--primary)' : 'white',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                onToggleAdmin(user);
-                onClose();
-              }}
-            >
-              {isAdmin ? 'Revoke Admin Status' : 'Grant Admin Status'}
-            </button>
-          </div>
         </div>
       </div>
     </div>

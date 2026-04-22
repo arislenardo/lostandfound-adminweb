@@ -7,9 +7,11 @@
 
 :root {
   /* Mobile App Heritage Palette */
-  --cream: #FDF8F0;
-  --white: #FFFCF9;
-  --brown: #5C3D1E;
+  --cream: #F8F9FA;
+  /* Neutral Slate-Grey replaced the reddish cream */
+  --white: #FFFFFF;
+  --brown: #2D3748;
+  /* Darker neutral Slate for text */
   --gold: #D4A017;
   --gold-light: #F4C430;
   --ube: #8D5BA1;

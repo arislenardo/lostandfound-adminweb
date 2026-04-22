@@ -27,13 +27,30 @@
 /* Filter bar */
 .filterBar {
   display: flex;
-  gap: 0.75rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--border-radius);
-  padding: 0.75rem 1rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filterLabel {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
 }
 
 .searchInput {
@@ -175,7 +192,7 @@
 
 .statusPending {
   background-color: var(--warning-light);
-  color: #c2410c;
+  color: #744210;
 }
 
 .statusRejected {
@@ -205,13 +222,17 @@
 }
 
 .roleResident {
-  background-color: rgba(212, 160, 23, 0.12);
-  color: #92400e;
+  background-color: rgba(184, 134, 11, 0.12);
+  /* Warm thematic gold */
+  color: #855E1A;
+  /* Dark Brown-Gold for readability */
 }
 
 .roleNonResident {
-  background-color: rgba(141, 91, 161, 0.12);
-  color: var(--ube);
+  background-color: rgba(92, 61, 30, 0.08);
+  /* Neutral thematic brown tint */
+  color: #726252;
+  /* Muted brown-grey */
 }
 
 /* Action buttons */

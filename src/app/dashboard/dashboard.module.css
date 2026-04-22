@@ -27,8 +27,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Sidebar */
@@ -52,27 +57,35 @@
 }
 
 .logoBadge {
-  background: white;
-  color: var(--primary);
+  background: transparent;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: 50%;
+  border: none;
+  /* Explicitly removed all borders */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
+  /* Removed image borders */
 }
 
 .brandInfo h2 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #FFFFFF;
   letter-spacing: -0.01em;
-  line-height: 1.2;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .brandInfo span {
@@ -118,10 +131,12 @@
 }
 
 .navItem.active {
-  background-color: white;
-  color: var(--primary);
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background-color: var(--gold);
+  /* Gold background for high contrast in green sidebar */
+  color: var(--brown);
+  /* Brown text for readability */
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .navIcon {
@@ -257,7 +272,7 @@
   border-radius: 6px;
   border: 1px solid var(--border);
   margin-left: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .topbarRight {
@@ -280,7 +295,8 @@
   border: 1px solid transparent;
 }
 
-.topbarAction:hover, .activeAction {
+.topbarAction:hover,
+.activeAction {
   background-color: var(--cream);
   border-color: var(--border);
   color: var(--primary);
@@ -306,8 +322,15 @@
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdownHeader {
@@ -398,13 +421,14 @@
 
 .notificationDot {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 8px;
-  height: 8px;
-  background-color: var(--error);
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background-color: var(--gold); /* Signal branded attention */
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid white; /* High contrast ring */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .contentWrapper {

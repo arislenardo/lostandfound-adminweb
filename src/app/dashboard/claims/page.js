@@ -18,22 +18,27 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
 
   const statusColors = {
     approved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
+    returned: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
+    resolved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     rejected: { bg: 'var(--error-light)', color: '#b91c1c' },
-    pending:  { bg: 'var(--warning-light)', color: '#c86037ff' },
+    pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
+    claim_pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
   };
   const sc = statusColors[(claim.status || 'pending').toLowerCase()] || statusColors.pending;
 
   const overlayStyle = {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(92,61,30,0.5)', display: 'flex',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)', /* Neutral dark overlay */
+    display: 'flex',
     alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(8px)', /* Enhanced blur for a cleaner look */
   };
   const contentStyle = {
-    backgroundColor: 'var(--surface)', borderRadius: '14px',
-    width: '90%', maxWidth: '540px', padding: '2rem',
-    position: 'relative', boxShadow: '0 25px 50px -12px rgba(92,61,30,0.25)',
+    backgroundColor: 'var(--surface)', borderRadius: '18px',
+    width: '90%', maxWidth: '540px', padding: '2.5rem',
+    position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
     border: '1px solid var(--border)',
+    overflow: 'hidden',
   };
   const rowStyle = { display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.25rem' };
   const labelStyle = { fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 };
@@ -62,8 +67,17 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
         </div>
         <div style={rowStyle}>
           <span style={labelStyle}>Status</span>
-          <span style={{ display: 'inline-block', padding: '0.25rem 0.8rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700, textTransform: 'capitalize', backgroundColor: sc.bg, color: sc.color }}>
-            {claim.status || 'Pending'}
+          <span style={{ 
+            display: 'inline-block', 
+            padding: '0.25rem 0.8rem', 
+            borderRadius: '999px', 
+            fontSize: '0.8rem', 
+            fontWeight: 700, 
+            textTransform: 'uppercase', 
+            backgroundColor: sc.bg, 
+            color: sc.color 
+          }}>
+            {STATUS_LABELS[(claim.status || 'pending').toLowerCase()] || claim.status || 'PENDING'}
           </span>
         </div>
         {claim.manualMatch && (
@@ -87,6 +101,15 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
   );
 }
 
+const STATUS_LABELS = {
+  'pending': 'PENDING',
+  'approved': 'APPROVED',
+  'rejected': 'REJECTED',
+  'returned': 'RETURNED',
+  'claim_pending': 'CLAIM PENDING',
+  'all': 'ALL STATUSES'
+};
+
 const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned'];
 
 export default function ClaimsPage() {
@@ -95,6 +118,8 @@ export default function ClaimsPage() {
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 25;
 
@@ -104,7 +129,7 @@ export default function ClaimsPage() {
         // Fetch all claims without orderBy to avoid exclusion of docs without timestamp
         const snap = await getDocs(collection(db, 'claims'));
         const allClaims = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-        
+
         // Sort in-memory to be more robust
         allClaims.sort((a, b) => {
           const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp || 0);
@@ -124,9 +149,26 @@ export default function ClaimsPage() {
 
   const filteredClaims = useMemo(() => {
     setCurrentPage(1); // Reset page on filter change
-    if (statusFilter === 'All') return claims;
-    return claims.filter(c => (c.status || 'pending').toLowerCase() === statusFilter);
-  }, [claims, statusFilter]);
+    return claims.filter(c => {
+      const matchesStatus = statusFilter === 'All' || (c.status || 'pending').toLowerCase() === statusFilter;
+
+      let matchesDate = true;
+      if (c.timestamp?.toDate) {
+        const claimDate = c.timestamp.toDate();
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (claimDate < start) matchesDate = false;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (claimDate > end) matchesDate = false;
+        }
+      }
+      return matchesStatus && matchesDate;
+    });
+  }, [claims, statusFilter, startDate, endDate]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredClaims.length / ITEMS_PER_PAGE);
@@ -142,7 +184,7 @@ export default function ClaimsPage() {
 
     try {
       // 1. Update the claim document
-      await updateDoc(doc(db, 'claims', claimId), { 
+      await updateDoc(doc(db, 'claims', claimId), {
         status: newStatus,
         resolvedAt: serverTimestamp(),
         resolvedBy: adminUser?.uid || 'admin'
@@ -151,12 +193,12 @@ export default function ClaimsPage() {
       // 2. If approved, ALSO update the items in found_items/lost_items
       if (newStatus === 'approved' && claim.itemId) {
         await updateDoc(doc(db, 'found_items', claim.itemId), { status: 'returned' });
-        
+
         // If it was a manual match or has lostItemId, resolve that too
         if (claim.lostItemId) {
-          await updateDoc(doc(db, 'lost_items', claim.lostItemId), { 
+          await updateDoc(doc(db, 'lost_items', claim.lostItemId), {
             status: 'resolved',
-            claimedFoundItemId: claim.itemId 
+            claimedFoundItemId: claim.itemId
           });
         }
       }
@@ -217,11 +259,46 @@ export default function ClaimsPage() {
 
       {/* Filter Bar */}
       <div className={styles.filterBar}>
-        <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          {STATUS_FILTERS.map(s => (
-            <option key={s} value={s}>{s === 'All' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}</option>
-          ))}
-        </select>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Status Filter</label>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            {STATUS_FILTERS.map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Start Date</label>
+          <input
+            type="date"
+            className={styles.searchInput}
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+          />
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>End Date</label>
+          <input
+            type="date"
+            className={styles.searchInput}
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+          />
+        </div>
+
+        <button
+          className={styles.actionBtn}
+          style={{ height: '40px', padding: '0 1rem' }}
+          onClick={() => { setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+        >
+          Reset Filters
+        </button>
       </div>
 
       <div className={styles.tableWrapper}>
@@ -251,7 +328,7 @@ export default function ClaimsPage() {
                     <td className={styles.idCell} title={claim.userId}>{claim.userId || '—'}</td>
                     <td>
                       <span className={getStatusClass(claim.status)}>
-                        {claim.status || 'Pending'}
+                        {STATUS_LABELS[(claim.status || 'pending').toLowerCase()] || claim.status}
                       </span>
                     </td>
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
@@ -297,15 +374,15 @@ export default function ClaimsPage() {
             Page {currentPage} of {totalPages} ({filteredClaims.length} records)
           </div>
           <div className={styles.pageControls}>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
             >
               Previous
             </button>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >

@@ -22,16 +22,16 @@ export default function DashboardOverview() {
           getDocs(query(collection(db, 'claims'), where('status', '==', 'pending'))),
         ]);
 
-        const found  = foundSnap.docs.map(d  => ({ ...d.data(),  id: d.id }));
-        const lost   = lostSnap.docs.map(d   => ({ ...d.data(),  id: d.id }));
+        const found = foundSnap.docs.map(d => ({ ...d.data(), id: d.id }));
+        const lost = lostSnap.docs.map(d => ({ ...d.data(), id: d.id }));
         const claims = allClaimsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
 
         setAllData({ found, lost, claims });
         setStats({
-          totalFound:    foundSnap.size,
-          totalLost:     lostSnap.size,
+          totalFound: foundSnap.size,
+          totalLost: lostSnap.size,
           pendingClaims: pendingSnap.size,
-          totalClaims:   allClaimsSnap.size,
+          totalClaims: allClaimsSnap.size,
         });
       } catch (error) {
         console.error("Error fetching overview stats:", error);
@@ -57,12 +57,12 @@ export default function DashboardOverview() {
       [``],
       [`--- SUMMARY ---`],
       [`Total Found Items Reported`, allData.found.length],
-      [`Total Lost Items Reported`,  allData.lost.length],
+      [`Total Lost Items Reported`, allData.lost.length],
       [`Items Successfully Returned`, returnedCount],
-      [`Total Claims Filed`,          allData.claims.length],
-      [`  ↳ Approved`,               approvedCount],
-      [`  ↳ Pending`,                pendingCount],
-      [`  ↳ Rejected`,               rejectedCount],
+      [`Total Claims Filed`, allData.claims.length],
+      [`  ↳ Approved`, approvedCount],
+      [`  ↳ Pending`, pendingCount],
+      [`  ↳ Rejected`, rejectedCount],
       [``],
       [`--- FOUND ITEMS ---`],
       ['ID', 'Name', 'Category', 'Status', 'Location', 'Finder UID', 'Date Reported'],
@@ -106,10 +106,10 @@ export default function DashboardOverview() {
     ).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BalikCalasiao_Report_${now.toISOString().slice(0,7)}.csv`;
+    link.download = `BalikCalasiao_Report_${now.toISOString().slice(0, 7)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -130,7 +130,7 @@ export default function DashboardOverview() {
     const approved = allData.claims.filter(c => (c.status || '').toLowerCase() === 'approved' || (c.status || '').toLowerCase() === 'returned').length;
     const rejected = allData.claims.filter(c => (c.status || '').toLowerCase() === 'rejected').length;
     return [
-      { label: 'Pending', count: pending, color: 'var(--warning)', total: allData.claims.length },
+      { label: 'Pending', count: pending, color: 'var(--gold)', total: allData.claims.length },
       { label: 'Cleared', count: approved, color: 'var(--success)', total: allData.claims.length },
       { label: 'Rejected', count: rejected, color: 'var(--error)', total: allData.claims.length },
     ];
@@ -190,8 +190,8 @@ export default function DashboardOverview() {
                       <span>{count}</span>
                     </div>
                     <div className={styles.barWrapper}>
-                      <div 
-                        className={styles.barFill} 
+                      <div
+                        className={styles.barFill}
                         style={{ width: `${percentage}%`, backgroundColor: 'var(--primary)' }}
                       />
                     </div>
@@ -216,8 +216,8 @@ export default function DashboardOverview() {
                     <span>{stat.count} ({Math.round(percentage)}%)</span>
                   </div>
                   <div className={styles.barWrapper}>
-                    <div 
-                      className={styles.barFill} 
+                    <div
+                      className={styles.barFill}
                       style={{ width: `${percentage}%`, backgroundColor: stat.color }}
                     />
                   </div>

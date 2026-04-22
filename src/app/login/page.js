@@ -62,7 +62,13 @@ function LoginContent() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <div className={styles.logoBadge}>BC</div>
+          <div className={styles.logoBadge}>
+            <img 
+              src="/app-logo.webp" 
+              alt="Balik-Calasiao Logo" 
+              className={styles.logoImage}
+            />
+          </div>
           <h1 className={styles.title}>Balik-Calasiao</h1>
           <p className={styles.subtitle}>Official Admin Command Center</p>
         </div>

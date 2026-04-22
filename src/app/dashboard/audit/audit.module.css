@@ -44,9 +44,27 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  background: rgba(141, 91, 161, 0.1);
-  color: var(--ube);
   white-space: nowrap;
+}
+
+.badgeSuccess {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.badgeError {
+  background: var(--error-light);
+  color: #b91c1c;
+}
+
+.badgeWarning {
+  background: var(--gold-light);
+  color: var(--brown);
+}
+
+.badgeInfo {
+  background: rgba(92, 61, 30, 0.08);
+  color: var(--brown);
 }
 
 /* Filters */
@@ -146,4 +164,22 @@
 .pageBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.actionBtn {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.actionBtn:hover {
+  background-color: var(--primary);
+  color: white;
 }

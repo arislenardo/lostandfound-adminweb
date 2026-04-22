@@ -223,15 +223,15 @@ export default function UsersPage() {
             Page {currentPage} of {totalPages} ({filtered.length} users)
           </div>
           <div className={styles.pageControls}>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
             >
               Previous
             </button>
-            <button 
-              className={styles.pageBtn} 
+            <button
+              className={styles.pageBtn}
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
             >

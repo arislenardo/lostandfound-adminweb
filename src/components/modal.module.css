@@ -64,7 +64,7 @@
 
 .modalHeader {
   padding: 2rem 2.5rem;
-  background: linear-gradient(to right, var(--cream), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.03), transparent);
   border-bottom: 1px solid var(--border);
 }
 
