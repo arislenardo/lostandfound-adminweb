@@ -6,6 +6,11 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './login.module.css';
 
+/**
+ * Component that renders the login form and handles the authentication process.
+ * Used internally within the Suspense boundary.
+ * @returns {JSX.Element} The rendered login content.
+ */
 function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +26,12 @@ function LoginContent() {
     }
   }, [searchParams]);
 
+  /**
+   * Handles the form submission to authenticate the user.
+   * Verifies credentials against Firebase Auth and checks Firestore to ensure
+   * the user has administrator privileges before redirecting to the dashboard.
+   * @param {React.FormEvent} e - The form submission event.
+   */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -117,6 +128,10 @@ function LoginContent() {
   );
 }
 
+/**
+ * Main login page component wrapped in a Suspense boundary for Next.js routing.
+ * @returns {JSX.Element} The rendered login page.
+ */
 export default function Login() {
   return (
     <Suspense fallback={<div className={styles.container}>Loading authentication system...</div>}>

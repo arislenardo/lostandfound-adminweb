@@ -25,6 +25,11 @@ function isResidentUser(user) {
   return true;
 }
 
+/**
+ * Page component for displaying and managing the list of users.
+ * Allows filtering by role, searching, and managing administrator privileges.
+ * @returns {JSX.Element} The rendered Users dashboard page.
+ */
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [adminIds, setAdminIds] = useState(new Set());
@@ -47,6 +52,9 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
+    /**
+     * Fetches all users and administrators from Firestore and updates the state.
+     */
     async function fetchAll() {
       try {
         const [usersSnap, adminsSnap] = await Promise.all([
@@ -93,6 +101,12 @@ export default function UsersPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  /**
+   * Toggles the administrator status for a given user.
+   * If the user is an admin, their privileges are revoked. Otherwise, they are granted admin privileges.
+   * Logs the action to the admin history collection.
+   * @param {Object} user - The user object to update.
+   */
   const handleToggleAdmin = async (user) => {
     const isAdmin = adminIds.has(user.id);
     const action = isAdmin ? 'remove admin from' : 'make admin';
@@ -122,12 +136,22 @@ export default function UsersPage() {
     }
   };
 
+  /**
+   * Determines the CSS class for the role badge based on the user's role.
+   * @param {Object} user - The user object.
+   * @returns {string} The CSS class corresponding to the user's role.
+   */
   const getRoleBadgeClass = (user) => {
     if (adminIds.has(user.id)) return styles.roleAdmin;
     if (isResidentUser(user)) return styles.roleResident;
     return styles.roleNonResident;
   };
 
+  /**
+   * Gets the display label for the user's role.
+   * @param {Object} user - The user object.
+   * @returns {string} The formatted role label.
+   */
   const getRoleLabel = (user) => {
     if (adminIds.has(user.id)) return 'Administrator';
     if (isResidentUser(user)) return 'Resident';

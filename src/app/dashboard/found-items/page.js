@@ -37,6 +37,11 @@ const STATUS_LABELS = {
   'all': 'All Statuses'
 };
 
+/**
+ * Returns the appropriate CSS class for a given status badge.
+ * @param {string} status - The status of the found item.
+ * @returns {string} The CSS class name from table.module.css.
+ */
 function getStatusStyle(status) {
   const s = (status || '').toLowerCase();
   if (s === 'returned' || s === 'resolved' || s === 'claimed') return styles.statusReturned;
@@ -46,6 +51,10 @@ function getStatusStyle(status) {
   return styles.statusFound; // found → blue
 }
 
+/**
+ * Page component for displaying and managing the registry of found items.
+ * @returns {JSX.Element} The rendered Found Items dashboard page.
+ */
 export default function FoundItemsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +69,10 @@ export default function FoundItemsPage() {
   const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
+    /**
+     * Fetches the latest found items from the Firestore 'found_items' collection,
+     * ordered by creation date (newest first).
+     */
     async function fetchItems() {
       try {
         const q = query(collection(db, 'found_items'), orderBy('createdAt', 'desc'));
@@ -95,6 +108,11 @@ export default function FoundItemsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  /**
+   * Deletes a specific found item report from Firestore and logs the action
+   * to the admin history collection.
+   * @param {string} itemId - The document ID of the item to delete.
+   */
   const handleDeleteItem = async (itemId) => {
     const item = items.find(i => i.id === itemId);
     if (!window.confirm(`Delete "${item?.name || 'this item'}"? This cannot be undone.`)) return;

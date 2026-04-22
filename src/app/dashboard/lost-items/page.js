@@ -37,6 +37,11 @@ const STATUS_LABELS = {
   'all': 'All Statuses'
 };
 
+/**
+ * Returns the appropriate CSS class for a given status badge.
+ * @param {string} status - The status of the lost item.
+ * @returns {string} The CSS class name from table.module.css.
+ */
 function getStatusStyle(status) {
   const s = (status || '').toLowerCase();
   if (s === 'resolved' || s === 'returned' || s === 'claimed') return styles.statusResolved;
@@ -45,6 +50,10 @@ function getStatusStyle(status) {
   return styles.statusLost; // lost → blue
 }
 
+/**
+ * Page component for displaying and managing the registry of lost items.
+ * @returns {JSX.Element} The rendered Lost Items dashboard page.
+ */
 export default function LostItemsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +68,10 @@ export default function LostItemsPage() {
   const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
+    /**
+     * Fetches the latest lost items from the Firestore 'lost_items' collection,
+     * ordered by creation date (newest first).
+     */
     async function fetchItems() {
       try {
         const q = query(collection(db, 'lost_items'), orderBy('createdAt', 'desc'));
@@ -94,6 +107,11 @@ export default function LostItemsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  /**
+   * Deletes a specific lost item report from Firestore and logs the action
+   * to the admin history collection.
+   * @param {string} itemId - The document ID of the item to delete.
+   */
   const handleDeleteItem = async (itemId) => {
     const item = items.find(i => i.id === itemId);
     if (!window.confirm(`Delete "${item?.name || 'this item'}"? This cannot be undone.`)) return;

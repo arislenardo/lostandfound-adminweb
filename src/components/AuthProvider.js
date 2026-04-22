@@ -12,6 +12,14 @@ const AuthContext = createContext({
   loading: true
 });
 
+/**
+ * Authentication provider component that manages the user session.
+ * Enforces admin-only access by checking the 'admins' Firestore collection.
+ * Wraps the application to provide global auth state via Context.
+ * @param {Object} props - Component props.
+ * @param {JSX.Element} props.children - The child components to render.
+ * @returns {JSX.Element} The rendered provider.
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -81,4 +89,9 @@ export function AuthProvider({ children }) {
   );
 }
 
+/**
+ * Custom hook to consume the AuthContext.
+ * Provides the current user, admin status, and loading state.
+ * @returns {Object} The current authentication context.
+ */
 export const useAuth = () => useContext(AuthContext);

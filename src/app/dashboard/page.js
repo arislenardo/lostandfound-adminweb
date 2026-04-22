@@ -6,6 +6,11 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import styles from './overview.module.css';
 
+/**
+ * Dashboard overview page component. Displays key statistics, charts,
+ * and quick actions for the lost and found administration panel.
+ * @returns {JSX.Element} The rendered dashboard overview page.
+ */
 export default function DashboardOverview() {
   const [stats, setStats] = useState({ totalFound: 0, totalLost: 0, pendingClaims: 0, totalClaims: 0 });
   const [loading, setLoading] = useState(true);
@@ -13,6 +18,9 @@ export default function DashboardOverview() {
   const router = useRouter();
 
   useEffect(() => {
+    /**
+     * Fetches current statistics from Firestore to populate the dashboard.
+     */
     async function fetchStats() {
       try {
         const [foundSnap, lostSnap, allClaimsSnap, pendingSnap] = await Promise.all([
@@ -42,6 +50,10 @@ export default function DashboardOverview() {
     fetchStats();
   }, []);
 
+  /**
+   * Generates and downloads a monthly CSV report containing all recorded
+   * found items, lost items, and claims from the database.
+   */
   const handleExportReport = () => {
     const now = new Date();
     const month = now.toLocaleString('default', { month: 'long', year: 'numeric' });

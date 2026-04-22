@@ -3,12 +3,27 @@
 import { useEffect, useState } from 'react';
 import styles from './modal.module.css';
 
+/**
+ * Modal component for displaying detailed information about a user/citizen.
+ * @param {Object} props - Component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {Function} props.onClose - Callback to trigger when closing the modal.
+ * @param {Object} props.user - The user object to display.
+ * @param {Set<string>} props.adminIds - A set of user IDs that have administrative privileges.
+ * @param {Function} props.onToggleAdmin - Optional callback to toggle administrative privileges.
+ * @returns {JSX.Element|null} The rendered modal or null if closed.
+ */
 export default function UserDetailModal({ isOpen, onClose, user, adminIds, onToggleAdmin }) {
   if (!isOpen || !user) return null;
 
   const isAdmin = adminIds.has(user.id);
   
-  // Format dates if they are Firestore timestamps
+  /**
+   * Formats a given date value into a human-readable string.
+   * Handles Firestore Timestamps, standard Date objects, and falls back to string conversion.
+   * @param {any} val - The date value to format.
+   * @returns {string} The formatted date string or 'N/A' if null/undefined.
+   */
   const formatDate = (val) => {
     if (!val) return 'N/A';
     if (val.toDate) return val.toDate().toLocaleString();

@@ -7,6 +7,16 @@ import { sendNewMessageNotification } from '@/lib/emailService';
 import styles from './modal.module.css';
 import msgStyles from './message.module.css';
 
+/**
+ * Modal component to facilitate direct messaging between an administrator
+ * and a specific user. Displays chat history and allows sending new messages.
+ * @param {Object} props - Component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {Function} props.onClose - Callback to trigger when closing the modal.
+ * @param {Object} props.user - The user being messaged.
+ * @param {Object} props.adminUser - The currently logged-in administrator.
+ * @returns {JSX.Element|null} The rendered message modal or null if closed.
+ */
 export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -36,6 +46,9 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
     let sent = [];
     let received = [];
 
+    /**
+     * Helper function to merge and sort sent and received messages by timestamp.
+     */
     const merge = () => {
       const combined = [...sent, ...received];
       combined.sort((a, b) => {
@@ -77,6 +90,10 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * Handles sending a new message from the administrator to the user.
+   * Also triggers an email notification to the user if they have an email address.
+   */
   const handleSend = async () => {
     if (!newMessage.trim() || sending) return;
     setSending(true);
@@ -118,6 +135,10 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
     }
   };
 
+  /**
+   * Concludes the chat session, preventing further replies from either party.
+   * Sends a final closing message and marks the session as closed in the database.
+   */
   const handleEndSession = async () => {
     if (!window.confirm("End this chat session? This will prevent any further replies from both parties.")) return;
 

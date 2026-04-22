@@ -23,6 +23,13 @@ import styles from './dashboard.module.css';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
+/**
+ * Layout component for the admin dashboard, including the sidebar and top navigation.
+ * Handles real-time notifications for claims and messages.
+ * @param {Object} props - The component props.
+ * @param {JSX.Element} props.children - The child components to render within the layout.
+ * @returns {JSX.Element|null} The rendered dashboard layout.
+ */
 export default function DashboardLayout({ children }) {
   const { user, isAdmin, loading } = useAuth();
   const pathname = usePathname();
@@ -51,6 +58,9 @@ export default function DashboardLayout({ children }) {
 
     let allNotifs = { claims: [], messages: [] };
 
+    /**
+     * Updates and sorts the combined notifications from claims and messages.
+     */
     const updateNotifs = () => {
       // Sort in-memory like the phone app's derivedStateOf
       const combined = [...allNotifs.claims, ...allNotifs.messages]
@@ -115,6 +125,9 @@ export default function DashboardLayout({ children }) {
     return null; // Will redirect via AuthProvider
   }
 
+  /**
+   * Handles the logout process for the administrator.
+   */
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/login');

@@ -9,6 +9,12 @@ export const metadata = {
   },
 };
 
+/**
+ * Root layout component for the application, providing the base HTML structure and authentication context.
+ * @param {Object} props - The component props.
+ * @param {JSX.Element} props.children - The child components to render.
+ * @returns {JSX.Element} The rendered root layout.
+ */
 export default function RootLayout({ children }) {
   return (
     <html lang="en">

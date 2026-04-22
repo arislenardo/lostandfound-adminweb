@@ -6,6 +6,14 @@ import { collection, getDocs, orderBy, query, doc, updateDoc, addDoc, serverTime
 import { sendClaimStatusNotification } from '@/lib/emailService';
 import styles from '../table.module.css';
 
+/**
+ * Modal component for displaying the details of a specific claim.
+ * @param {Object} props - Component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {Function} props.onClose - Callback to trigger when closing the modal.
+ * @param {Object} props.claim - The claim object to display.
+ * @returns {JSX.Element|null} The rendered modal or null if closed.
+ */
 function ClaimDetailModal({ isOpen, onClose, claim }) {
   if (!isOpen || !claim) return null;
 
@@ -112,6 +120,10 @@ const STATUS_LABELS = {
 
 const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned'];
 
+/**
+ * Page component for viewing and resolving user claims.
+ * @returns {JSX.Element} The rendered Claims dashboard page.
+ */
 export default function ClaimsPage() {
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +136,10 @@ export default function ClaimsPage() {
   const ITEMS_PER_PAGE = 25;
 
   useEffect(() => {
+    /**
+     * Fetches all claims from the Firestore 'claims' collection and sorts them
+     * in-memory by timestamp to avoid missing records without indexes.
+     */
     async function fetchClaims() {
       try {
         // Fetch all claims without orderBy to avoid exclusion of docs without timestamp
@@ -177,6 +193,12 @@ export default function ClaimsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  /**
+   * Updates the status of a claim, triggers necessary cascading updates to the
+   * associated lost/found items, logs the admin action, and sends a notification email.
+   * @param {string} claimId - The document ID of the claim to update.
+   * @param {string} newStatus - The new status to apply (e.g., 'approved', 'rejected').
+   */
   const handleUpdateStatus = async (claimId, newStatus) => {
     const claim = claims.find(c => c.id === claimId);
     const adminUser = auth.currentUser;
@@ -230,11 +252,20 @@ export default function ClaimsPage() {
     }
   };
 
+  /**
+   * Opens the claim detail modal for a selected claim.
+   * @param {Object} claim - The claim to view.
+   */
   const openDetail = (claim) => {
     setSelectedClaim(claim);
     setIsDetailOpen(true);
   };
 
+  /**
+   * Returns the appropriate CSS class for a given claim status.
+   * @param {string} status - The status of the claim.
+   * @returns {string} The CSS class name for the status badge.
+   */
   const getStatusClass = (status) => {
     const s = (status || 'pending').toLowerCase();
     if (s === 'approved' || s === 'returned') return `${styles.badge} ${styles.statusApproved}`;

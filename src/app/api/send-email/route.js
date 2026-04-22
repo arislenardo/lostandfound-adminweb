@@ -4,6 +4,11 @@ const BREVO_API_KEY = "xkeysib-2e27bdf51ccae1f1a24e0ee57bdbd378aad9f0ae095e6941f
 const VERIFIED_SENDER_EMAIL = "ladagaas.820.stud@cdd.edu.ph";
 const SENDER_NAME = "Balik-Calasiao";
 
+/**
+ * Handles POST requests to send an email using the Brevo API.
+ * @param {Request} request - The incoming HTTP request containing email details (toEmail, toName, subject, htmlContent).
+ * @returns {NextResponse} The JSON response indicating success or failure.
+ */
 export async function POST(request) {
   try {
     const { toEmail, toName, subject, htmlContent } = await request.json();

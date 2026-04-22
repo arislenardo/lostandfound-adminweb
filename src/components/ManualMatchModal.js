@@ -8,6 +8,14 @@ import {
 import styles from './modal.module.css';
 import matchStyles from './match.module.css';
 
+/**
+ * Modal component allowing admins to manually match a lost item with a found item.
+ * @param {Object} props - Component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {Function} props.onClose - Callback to trigger when closing the modal.
+ * @param {Object} props.adminUser - The currently authenticated admin user object.
+ * @returns {JSX.Element|null} The rendered modal or null if closed.
+ */
 export default function ManualMatchModal({ isOpen, onClose, adminUser }) {
   const [lostItems, setLostItems]   = useState([]);
   const [foundItems, setFoundItems] = useState([]);
@@ -18,6 +26,9 @@ export default function ManualMatchModal({ isOpen, onClose, adminUser }) {
 
   useEffect(() => {
     if (!isOpen) return;
+    /**
+     * Fetches all unresolved lost and found items from Firestore to populate the dropdowns.
+     */
     async function load() {
       setLoading(true);
       const [lostSnap, foundSnap] = await Promise.all([
@@ -31,6 +42,10 @@ export default function ManualMatchModal({ isOpen, onClose, adminUser }) {
     load();
   }, [isOpen]);
 
+  /**
+   * Processes the manual match by creating a claim record, updating item statuses,
+   * and logging the action in the admin history.
+   */
   const handleMatch = async () => {
     if (!selectedLost || !selectedFound) {
       alert('Please select both a lost item and a found item.');

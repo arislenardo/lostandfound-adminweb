@@ -36,22 +36,48 @@ const STATUS_LABELS = {
   'added': 'ADDED'
 };
 
+/**
+ * Capitalizes the first letter of a given string.
+ * @param {string} str - The string to capitalize.
+ * @returns {string} The capitalized string.
+ */
 function capitalize(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/**
+ * Safely converts a Firestore Timestamp or date string to a JavaScript Date object.
+ * @param {any} value - The date value to convert.
+ * @returns {Date|null} The converted Date object or null if invalid.
+ */
 function toDateSafe(value) {
   if (!value) return null;
   return value.toDate ? value.toDate() : new Date(value);
 }
 
+/**
+ * Formats the location data of an item for display.
+ * Falls back to coordinates if a location name is not available.
+ * @param {Object} item - The item containing location data.
+ * @returns {string} The formatted location string.
+ */
 function getLocationDisplay(item) {
   if (item.locationName) return item.locationName;
   if (item.latitude != null && item.longitude != null) return `Lat: ${item.latitude}, Lng: ${item.longitude}`;
   return 'Not specified';
 }
 
+/**
+ * Modal component for viewing and editing details of a lost or found item.
+ * @param {Object} props - Component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {Function} props.onClose - Callback to trigger when closing the modal.
+ * @param {Object} props.item - The item object to display or edit.
+ * @param {string} props.type - The registry type ('lost' or 'found').
+ * @param {Function} props.onUpdate - Callback to update the parent component's state after a successful edit.
+ * @returns {JSX.Element|null} The rendered modal or null if closed.
+ */
 export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,6 +93,9 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
   const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
   const collectionName = type === 'found' ? 'found_items' : 'lost_items';
 
+  /**
+   * Enters edit mode and populates the form with the current item data.
+   */
   const handleStartEdit = () => {
     setFormData({
       name: item.name || '',
@@ -78,11 +107,17 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
     setIsEditing(true);
   };
 
+  /**
+   * Exits edit mode and discards any unsaved changes.
+   */
   const handleCancel = () => {
     setIsEditing(false);
     setFormData({});
   };
 
+  /**
+   * Validates and saves the edited item data to Firestore, creating an admin history log.
+   */
   const handleSave = async () => {
     if (!formData.name?.trim()) {
       alert('Item name cannot be empty.');

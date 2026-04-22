@@ -19,6 +19,14 @@ const ACTION_LABELS = {
   GRANTED_ADMIN: 'Granted Admin',
 };
 
+/**
+ * Component for displaying the detailed view of a specific audit log entry.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isOpen - Whether the modal is open.
+ * @param {Function} props.onClose - Function to close the modal.
+ * @param {Object} props.log - The audit log entry object.
+ * @returns {JSX.Element|null} The rendered modal or null if not open.
+ */
 function AuditDetailModal({ isOpen, onClose, log }) {
   if (!isOpen || !log) return null;
 
@@ -102,6 +110,10 @@ function AuditDetailModal({ isOpen, onClose, log }) {
   );
 }
 
+/**
+ * Page component for displaying and filtering the system audit log.
+ * @returns {JSX.Element} The rendered Audit Log page.
+ */
 export default function AuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
