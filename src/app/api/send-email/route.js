@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const BREVO_API_KEY = "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";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const VERIFIED_SENDER_EMAIL = "ladagaas.820.stud@cdd.edu.ph";
 const SENDER_NAME = "Balik-Calasiao";
 
