@@ -286,8 +286,8 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
             </div>
 
             <div className={styles.detailRow}>
-              <span className={styles.label}>Reporter UID</span>
-              <span className={styles.value} style={{ fontFamily: 'monospace' }}>{item.userId}</span>
+              <span className={styles.label}>Reporter Email</span>
+              <span className={styles.value} title={item.userId}>{item.userEmail || item.userId}</span>
             </div>
 
             <div className={styles.detailRow}>

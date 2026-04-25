@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import styles from './audit.module.css';
+import ExportModal from '@/components/ExportModal';
+import { exportToPDF, exportToExcel } from '@/lib/reportUtils';
 
 const ACTION_LABELS = {
   APPROVED_CLAIM: 'Approved Claim',
@@ -119,6 +121,7 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Filter and pagination states
   const [adminFilter, setAdminFilter] = useState('All');
@@ -193,19 +196,78 @@ export default function AuditPage() {
     setEndDate('');
   };
 
+  const handleExport = (exportStartDate, exportEndDate, format) => {
+    let exportData = logs;
+    
+    if (exportStartDate) {
+      const start = new Date(exportStartDate);
+      start.setHours(0, 0, 0, 0);
+      exportData = exportData.filter(log => {
+        if (!log.timestamp) return false;
+        const d = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+        return d >= start;
+      });
+    }
+    if (exportEndDate) {
+      const end = new Date(exportEndDate);
+      end.setHours(23, 59, 59, 999);
+      exportData = exportData.filter(log => {
+        if (!log.timestamp) return false;
+        const d = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+        return d <= end;
+      });
+    }
+
+    const columns = [
+      { header: 'Timestamp', key: 'formattedDate' },
+      { header: 'Admin', key: 'admin' },
+      { header: 'Action', key: 'action' },
+      { header: 'Subject', key: 'subject' },
+      { header: 'Item ID', key: 'itemId' },
+    ];
+
+    const dataToExport = exportData.map(log => ({
+      ...log,
+      formattedDate: log.timestamp 
+        ? new Date(log.timestamp.toDate?.() || log.timestamp).toLocaleString() 
+        : 'Unknown',
+      admin: log.adminName || log.adminId,
+      action: ACTION_LABELS[log.actionType] || log.actionType,
+      subject: log.itemTitle || '—',
+      itemId: log.itemId || '—'
+    }));
+
+    if (format === 'pdf') {
+      exportToPDF('Audit Logs Report', columns, dataToExport, 'audit_logs_report');
+    } else {
+      exportToExcel('Audit Logs Report', columns, dataToExport, 'audit_logs_report');
+    }
+  };
+
   if (loading) return <div className={styles.emptyState}>Loading audit log...</div>;
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <h2>System Audit Log</h2>
-        <span>
-          {filteredLogs.length > 0 ? (
-            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of ${filteredLogs.length} Records`
-          ) : (
-            '0 Records'
-          )}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>
+            <h2>System Audit Log</h2>
+            <span>
+              {filteredLogs.length > 0 ? (
+                `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of ${filteredLogs.length} Records`
+              ) : (
+                '0 Records'
+              )}
+            </span>
+          </div>
+          <button 
+            className={styles.resetBtn} 
+            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', marginLeft: 'auto' }}
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            Export Report
+          </button>
+        </div>
       </div>
 
       <div className={styles.filterBar}>
@@ -236,7 +298,7 @@ export default function AuditPage() {
         </div>
 
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>From Date</label>
+          <label className={styles.filterLabel}>Start Date</label>
           <input
             type="date"
             className={styles.filterInput}
@@ -246,7 +308,7 @@ export default function AuditPage() {
         </div>
 
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>To Date</label>
+          <label className={styles.filterLabel}>End Date</label>
           <input
             type="date"
             className={styles.filterInput}
@@ -344,6 +406,13 @@ export default function AuditPage() {
         isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); setSelectedLog(null); }}
         log={selectedLog}
+      />
+
+      <ExportModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Export Audit Logs"
       />
     </div>
   );

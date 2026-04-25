@@ -6,6 +6,8 @@ import { collection, getDocs, orderBy, query, doc, deleteDoc, addDoc, serverTime
 import styles from '../table.module.css';
 import Image from 'next/image';
 import ItemDetailModal from '@/components/ItemDetailModal';
+import ExportModal from '@/components/ExportModal';
+import { exportToPDF, exportToExcel } from '@/lib/reportUtils';
 
 const CATEGORIES = [
   'All',
@@ -59,11 +61,14 @@ export default function LostItemsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const adminUser = auth.currentUser;
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 25;
 
@@ -75,8 +80,27 @@ export default function LostItemsPage() {
     async function fetchItems() {
       try {
         const q = query(collection(db, 'lost_items'), orderBy('createdAt', 'desc'));
-        const snap = await getDocs(q);
-        setItems(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+        
+        const [snap, usersSnap] = await Promise.all([
+          getDocs(q),
+          getDocs(collection(db, 'users'))
+        ]);
+        
+        const usersMap = {};
+        usersSnap.forEach(doc => {
+          usersMap[doc.id] = doc.data().email || 'No Email';
+        });
+
+        const fetchedItems = snap.docs.map(d => {
+          const data = d.data();
+          return {
+            ...data,
+            id: d.id,
+            userEmail: usersMap[data.userId] || data.userId // Fallback to UID if email not found
+          };
+        });
+        
+        setItems(fetchedItems);
       } catch (error) {
         console.error("Error fetching lost items:", error);
       } finally {
@@ -96,9 +120,27 @@ export default function LostItemsPage() {
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
       const matchesStatus = statusFilter === 'All' ||
         (item.status || '').toLowerCase() === statusFilter;
-      return matchesSearch && matchesCategory && matchesStatus;
+
+      let matchesDate = true;
+      if (item.createdAt) {
+        const itemDate = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          if (itemDate < start) matchesDate = false;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          if (itemDate > end) matchesDate = false;
+        }
+      } else if (startDate || endDate) {
+        matchesDate = false;
+      }
+
+      return matchesSearch && matchesCategory && matchesStatus && matchesDate;
     });
-  }, [items, search, categoryFilter, statusFilter]);
+  }, [items, search, categoryFilter, statusFilter, startDate, endDate]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -107,11 +149,6 @@ export default function LostItemsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  /**
-   * Deletes a specific lost item report from Firestore and logs the action
-   * to the admin history collection.
-   * @param {string} itemId - The document ID of the item to delete.
-   */
   const handleDeleteItem = async (itemId) => {
     const item = items.find(i => i.id === itemId);
     if (!window.confirm(`Delete "${item?.name || 'this item'}"? This cannot be undone.`)) return;
@@ -131,37 +168,127 @@ export default function LostItemsPage() {
     }
   };
 
+  const handleExport = (startDate, endDate, format) => {
+    let exportData = items;
+    
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      exportData = exportData.filter(item => {
+        if (!item.createdAt) return false;
+        const d = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        return d >= start;
+      });
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      exportData = exportData.filter(item => {
+        if (!item.createdAt) return false;
+        const d = item.createdAt.toDate ? item.createdAt.toDate() : new Date(item.createdAt);
+        return d <= end;
+      });
+    }
+
+    const columns = [
+      { header: 'ID', key: 'id' },
+      { header: 'Item Name', key: 'name' },
+      { header: 'Category', key: 'category' },
+      { header: 'Status', key: 'status' },
+      { header: 'Reported At', key: 'formattedDate' },
+      { header: 'Owner Email', key: 'userEmail' },
+    ];
+
+    const dataToExport = exportData.map(item => ({
+      ...item,
+      formattedDate: item.createdAt 
+        ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() 
+        : 'N/A'
+    }));
+
+    if (format === 'pdf') {
+      exportToPDF('Lost Items Report', columns, dataToExport, 'lost_items_report');
+    } else {
+      exportToExcel('Lost Items Report', columns, dataToExport, 'lost_items_report');
+    }
+  };
+
   if (loading) return <div className={styles.emptyState}>Loading Lost Items...</div>;
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <h2>Registry of Lost Items</h2>
-        <span>
-          {filtered.length > 0 ? (
-            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} reports`
-          ) : (
-            '0 reports'
-          )}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>
+            <h2>Registry of Lost Items</h2>
+            <span>
+              {filtered.length > 0 ? (
+                `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} reports`
+              ) : (
+                '0 reports'
+              )}
+            </span>
+          </div>
+          <button 
+            className={styles.actionBtn} 
+            style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.5rem 1rem' }}
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            Export Report
+          </button>
+        </div>
       </div>
 
       <div className={styles.filterBar}>
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="Search by name or ID…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select className={styles.filterSelect} value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
-        </select>
-        <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          {['All', 'lost', 'pending', 'claim_pending', 'resolved', 'returned'].map(s => (
-            <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
-          ))}
-        </select>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Search</label>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Name or ID…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Category</label>
+          <select className={styles.filterSelect} value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Status</label>
+          <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {['All', 'lost', 'pending', 'claim_pending', 'resolved', 'returned'].map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Start Date</label>
+          <input
+            type="date"
+            className={styles.searchInput}
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>End Date</label>
+          <input
+            type="date"
+            className={styles.searchInput}
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+          />
+        </div>
+        <button
+          className={styles.actionBtn}
+          style={{ padding: '0.5rem 1rem', alignSelf: 'flex-end', height: '38px' }}
+          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+        >
+          Reset
+        </button>
       </div>
 
       <div className={styles.tableWrapper}>
@@ -173,7 +300,7 @@ export default function LostItemsPage() {
               <th>Category</th>
               <th>Status</th>
               <th>Reported At</th>
-              <th>Owner UID</th>
+              <th>Owner Email</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -206,7 +333,7 @@ export default function LostItemsPage() {
                       ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString('en-US', { hour12: true, month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })
                       : 'N/A'}
                   </td>
-                  <td className={styles.idCell} title={item.userId}>{item.userId}</td>
+                  <td className={styles.idCell} title={item.userId}>{item.userEmail || item.userId}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button className={styles.actionBtn} onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}>
@@ -261,6 +388,13 @@ export default function LostItemsPage() {
           setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
           setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
         }}
+      />
+
+      <ExportModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Export Lost Items"
       />
     </div>
   );

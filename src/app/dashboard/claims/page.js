@@ -5,6 +5,8 @@ import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { sendClaimStatusNotification } from '@/lib/emailService';
 import styles from '../table.module.css';
+import ExportModal from '@/components/ExportModal';
+import { exportToPDF, exportToExcel } from '@/lib/reportUtils';
 
 /**
  * Modal component for displaying the details of a specific claim.
@@ -129,6 +131,7 @@ export default function ClaimsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -261,6 +264,50 @@ export default function ClaimsPage() {
     setIsDetailOpen(true);
   };
 
+  const handleExport = (exportStartDate, exportEndDate, format) => {
+    let exportData = claims;
+    
+    if (exportStartDate) {
+      const start = new Date(exportStartDate);
+      start.setHours(0, 0, 0, 0);
+      exportData = exportData.filter(c => {
+        if (!c.timestamp) return false;
+        const d = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
+        return d >= start;
+      });
+    }
+    if (exportEndDate) {
+      const end = new Date(exportEndDate);
+      end.setHours(23, 59, 59, 999);
+      exportData = exportData.filter(c => {
+        if (!c.timestamp) return false;
+        const d = c.timestamp.toDate ? c.timestamp.toDate() : new Date(c.timestamp);
+        return d <= end;
+      });
+    }
+
+    const columns = [
+      { header: 'Claim ID', key: 'id' },
+      { header: 'Found Item ID', key: 'itemId' },
+      { header: 'Claimant UID', key: 'userId' },
+      { header: 'Status', key: 'status' },
+      { header: 'Date Filed', key: 'formattedDate' },
+    ];
+
+    const dataToExport = exportData.map(c => ({
+      ...c,
+      formattedDate: c.timestamp 
+        ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString() 
+        : 'Unknown'
+    }));
+
+    if (format === 'pdf') {
+      exportToPDF('Claims Report', columns, dataToExport, 'claims_report');
+    } else {
+      exportToExcel('Claims Report', columns, dataToExport, 'claims_report');
+    }
+  };
+
   /**
    * Returns the appropriate CSS class for a given claim status.
    * @param {string} status - The status of the claim.
@@ -278,14 +325,25 @@ export default function ClaimsPage() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <h2>Claim Resolution Hub</h2>
-        <span>
-          {filteredClaims.length > 0 ? (
-            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredClaims.length)} of ${filteredClaims.length} claims`
-          ) : (
-            '0 claims'
-          )}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>
+            <h2>Claim Resolution Hub</h2>
+            <span>
+              {filteredClaims.length > 0 ? (
+                `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredClaims.length)} of ${filteredClaims.length} claims`
+              ) : (
+                '0 claims'
+              )}
+            </span>
+          </div>
+          <button 
+            className={styles.actionBtn} 
+            style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.5rem 1rem' }}
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            Export Report
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -427,6 +485,13 @@ export default function ClaimsPage() {
         isOpen={isDetailOpen}
         onClose={() => { setIsDetailOpen(false); setSelectedClaim(null); }}
         claim={selectedClaim}
+      />
+
+      <ExportModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExport}
+        title="Export Claims"
       />
     </div>
   );
