@@ -207,10 +207,13 @@ export default function LostItemsPage() {
         : 'N/A'
     }));
 
+    const dateSuffix = new Date().toISOString().split('T')[0];
+    const exportName = `lost_items_report_${dateSuffix}`;
+
     if (format === 'pdf') {
-      exportToPDF('Lost Items Report', columns, dataToExport, 'lost_items_report');
+      exportToPDF('Lost Items Report', columns, dataToExport, exportName);
     } else {
-      exportToExcel('Lost Items Report', columns, dataToExport, 'lost_items_report');
+      exportToExcel('Lost Items Report', columns, dataToExport, exportName);
     }
   };
 

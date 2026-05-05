@@ -302,10 +302,13 @@ export default function ClaimsPage() {
         : 'Unknown'
     }));
 
+    const dateSuffix = new Date().toISOString().split('T')[0];
+    const exportName = `claims_report_${dateSuffix}`;
+
     if (format === 'pdf') {
-      exportToPDF('Claims Report', columns, dataToExport, 'claims_report');
+      exportToPDF('Claims Report', columns, dataToExport, exportName);
     } else {
-      exportToExcel('Claims Report', columns, dataToExport, 'claims_report');
+      exportToExcel('Claims Report', columns, dataToExport, exportName);
     }
   };
 

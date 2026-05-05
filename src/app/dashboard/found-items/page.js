@@ -208,10 +208,13 @@ export default function FoundItemsPage() {
         : 'N/A'
     }));
 
+    const dateSuffix = new Date().toISOString().split('T')[0];
+    const exportName = `found_items_report_${dateSuffix}`;
+
     if (format === 'pdf') {
-      exportToPDF('Found Items Report', columns, dataToExport, 'found_items_report');
+      exportToPDF('Found Items Report', columns, dataToExport, exportName);
     } else {
-      exportToExcel('Found Items Report', columns, dataToExport, 'found_items_report');
+      exportToExcel('Found Items Report', columns, dataToExport, exportName);
     }
   };
 

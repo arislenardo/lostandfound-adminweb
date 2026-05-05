@@ -237,10 +237,13 @@ export default function AuditPage() {
       itemId: log.itemId || '—'
     }));
 
+    const dateSuffix = new Date().toISOString().split('T')[0];
+    const exportName = `audit_logs_report_${dateSuffix}`;
+
     if (format === 'pdf') {
-      exportToPDF('Audit Logs Report', columns, dataToExport, 'audit_logs_report');
+      exportToPDF('Audit Logs Report', columns, dataToExport, exportName);
     } else {
-      exportToExcel('Audit Logs Report', columns, dataToExport, 'audit_logs_report');
+      exportToExcel('Audit Logs Report', columns, dataToExport, exportName);
     }
   };
 
