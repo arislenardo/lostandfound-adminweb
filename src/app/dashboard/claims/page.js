@@ -304,11 +304,16 @@ export default function ClaimsPage() {
 
     const dateSuffix = new Date().toISOString().split('T')[0];
     const exportName = `claims_report_${dateSuffix}`;
+    
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const dateRange = (exportStartDate || exportEndDate) 
+      ? `${formatDate(exportStartDate) || 'Beginning'} to ${formatDate(exportEndDate) || 'Present'}` 
+      : null;
 
     if (format === 'pdf') {
-      exportToPDF('Claims Report', columns, dataToExport, exportName);
+      exportToPDF('Claims Report', columns, dataToExport, exportName, dateRange);
     } else {
-      exportToExcel('Claims Report', columns, dataToExport, exportName);
+      exportToExcel('Claims Report', columns, dataToExport, exportName, dateRange);
     }
   };
 

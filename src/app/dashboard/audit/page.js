@@ -239,11 +239,16 @@ export default function AuditPage() {
 
     const dateSuffix = new Date().toISOString().split('T')[0];
     const exportName = `audit_logs_report_${dateSuffix}`;
+    
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const dateRange = (exportStartDate || exportEndDate) 
+      ? `${formatDate(exportStartDate) || 'Beginning'} to ${formatDate(exportEndDate) || 'Present'}` 
+      : null;
 
     if (format === 'pdf') {
-      exportToPDF('Audit Logs Report', columns, dataToExport, exportName);
+      exportToPDF('Audit Logs Report', columns, dataToExport, exportName, dateRange);
     } else {
-      exportToExcel('Audit Logs Report', columns, dataToExport, exportName);
+      exportToExcel('Audit Logs Report', columns, dataToExport, exportName, dateRange);
     }
   };
 

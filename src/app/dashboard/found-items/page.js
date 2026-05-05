@@ -210,11 +210,16 @@ export default function FoundItemsPage() {
 
     const dateSuffix = new Date().toISOString().split('T')[0];
     const exportName = `found_items_report_${dateSuffix}`;
+    
+    const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+    const dateRange = (startDate || endDate) 
+      ? `${formatDate(startDate) || 'Beginning'} to ${formatDate(endDate) || 'Present'}` 
+      : null;
 
     if (format === 'pdf') {
-      exportToPDF('Found Items Report', columns, dataToExport, exportName);
+      exportToPDF('Found Items Report', columns, dataToExport, exportName, dateRange);
     } else {
-      exportToExcel('Found Items Report', columns, dataToExport, exportName);
+      exportToExcel('Found Items Report', columns, dataToExport, exportName, dateRange);
     }
   };
 
