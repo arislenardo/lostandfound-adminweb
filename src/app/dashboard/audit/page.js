@@ -232,7 +232,7 @@ export default function AuditPage() {
         ? new Date(log.timestamp.toDate?.() || log.timestamp).toLocaleString() 
         : 'Unknown',
       admin: log.adminName || log.adminId,
-      action: ACTION_LABELS[log.actionType] || log.actionType,
+      action: (ACTION_LABELS[log.actionType] || log.actionType).toUpperCase(),
       subject: log.itemTitle || '—',
       itemId: log.itemId || '—'
     }));
@@ -261,8 +261,8 @@ export default function AuditPage() {
             </span>
           </div>
           <button 
-            className={styles.resetBtn} 
-            style={{ backgroundColor: 'var(--primary)', color: 'white', border: 'none', marginLeft: 'auto' }}
+            className={styles.actionBtn} 
+            style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.5rem 1rem' }}
             onClick={() => setIsExportModalOpen(true)}
           >
             Export Report

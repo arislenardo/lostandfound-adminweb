@@ -67,10 +67,10 @@ export default function ExportModal({ isOpen, onClose, onExport, title }) {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <button style={{ ...btnStyle, backgroundColor: '#dc2626' }} onClick={() => handleExport('pdf')}>
+          <button style={{ ...btnStyle, backgroundColor: '#16a34a' }} onClick={() => handleExport('pdf')}>
             Export PDF
           </button>
-          <button style={{ ...btnStyle, backgroundColor: '#16a34a' }} onClick={() => handleExport('excel')}>
+          <button style={{ ...btnStyle, backgroundColor: '#eab308', color: '#111827' }} onClick={() => handleExport('excel')}>
             Export Excel
           </button>
         </div>

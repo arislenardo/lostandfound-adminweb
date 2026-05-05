@@ -296,6 +296,7 @@ export default function ClaimsPage() {
 
     const dataToExport = exportData.map(c => ({
       ...c,
+      status: (STATUS_LABELS[(c.status || 'pending').toLowerCase()] || c.status).toUpperCase(),
       formattedDate: c.timestamp 
         ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString() 
         : 'Unknown'

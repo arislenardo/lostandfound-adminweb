@@ -202,6 +202,7 @@ export default function FoundItemsPage() {
 
     const dataToExport = exportData.map(item => ({
       ...item,
+      status: (STATUS_LABELS[(item.status || 'found').toLowerCase()] || item.status).toUpperCase(),
       formattedDate: item.createdAt 
         ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() 
         : 'N/A'

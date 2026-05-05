@@ -171,9 +171,9 @@
   background-color: transparent;
   color: var(--primary);
   border: 1px solid var(--primary);
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
