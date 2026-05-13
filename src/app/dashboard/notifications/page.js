@@ -36,7 +36,7 @@ export default function NotificationsPage() {
             type: type,
             message: type === 'dispute' ? `Dispute: Claim #${doc.id.slice(-4)} re-opened` : `New claim: ${data.itemName || 'Item #' + doc.id.slice(-4)}`,
             time: docTime,
-            link: '/dashboard/claims',
+            link: `/dashboard/claims?claimId=${doc.id}`,
             status: data.status
           });
         });

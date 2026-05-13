@@ -142,3 +142,136 @@ export const exportToExcel = (title, columns, data, filename, dateRange = null) 
   
   XLSX.writeFile(wb, `${filename}.xlsx`);
 };
+
+/**
+ * Exports a consolidated report (multiple sections) to a single PDF.
+ * 
+ * @param {string} title - Main title
+ * @param {Array<{title: string, columns: Array, data: Array}>} sections - Array of sections to include
+ * @param {string} filename - Output filename
+ * @param {string} dateRange - Optional date range string
+ */
+export const exportConsolidatedPDF = (title, sections, filename, dateRange = null) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  
+  // Header
+  doc.setFontSize(22);
+  doc.setTextColor(22, 163, 74);
+  doc.text(title, 14, 20);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(107, 114, 128);
+  const dateStr = new Date().toLocaleString();
+  doc.text(`Generated: ${dateStr}`, 14, 28);
+  
+  if (dateRange) {
+    doc.text(`Period: ${dateRange}`, 14, 34);
+  }
+  
+  let currentY = dateRange ? 40 : 34;
+  
+  sections.forEach((section, index) => {
+    // Section Title
+    if (currentY + 20 > pageHeight) {
+      doc.addPage();
+      currentY = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont('helvetica', 'bold');
+    doc.text(section.title, 14, currentY + 10);
+    doc.setFont('helvetica', 'normal');
+    
+    const head = [section.columns.map(col => col.header)];
+    const body = section.data.map(row => section.columns.map(col => {
+      const val = row[col.key];
+      return val !== null && val !== undefined ? String(val) : '';
+    }));
+    
+    autoTable(doc, {
+      startY: currentY + 15,
+      head: head,
+      body: body,
+      theme: 'striped',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255] },
+      margin: { left: 14, right: 14 },
+      didDrawPage: (data) => {
+        // Footer
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`, 14, pageHeight - 10);
+        doc.text("Lost and Found Admin - Consolidated Report", pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+    });
+    
+    currentY = doc.lastAutoTable.finalY + 10;
+  });
+  
+  doc.save(`${filename}.pdf`);
+};
+
+/**
+ * Exports multiple sections to an Excel workbook with multiple sheets.
+ * 
+ * @param {string} title - Main title (used in metadata)
+ * @param {Array<{title: string, columns: Array, data: Array}>} sections - Array of sections
+ * @param {string} filename - Output filename
+ * @param {string} dateRange - Optional date range string
+ */
+export const exportConsolidatedExcel = (title, sections, filename, dateRange = null) => {
+  const wb = XLSX.utils.book_new();
+  const dateStr = new Date().toLocaleString();
+  
+  // Prepare a single data array for one master sheet
+  let wsData = [
+    [title.toUpperCase()],
+    [`Generated: ${dateStr}`],
+  ];
+  if (dateRange) wsData.push([`Period: ${dateRange}`]);
+  wsData.push([]); // Spacer
+
+  sections.forEach((section, index) => {
+    // Add Section Header
+    wsData.push([section.title.toUpperCase()]);
+    
+    // Add Table Headers
+    const headers = section.columns.map(col => col.header);
+    wsData.push(headers);
+
+    // Add Data Rows
+    const rows = section.data.map(row => section.columns.map(col => {
+      const val = row[col.key];
+      return val !== null && val !== undefined ? String(val) : '';
+    }));
+    wsData.push(...rows);
+
+    // Add Spacer after section (except last)
+    if (index < sections.length - 1) {
+      wsData.push([], []); 
+    }
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Auto-size columns based on the widest table (Found Items usually)
+  // We'll calculate widths for the longest headers/rows across all sections
+  const maxCols = Math.max(...wsData.map(r => r.length));
+  const colWidths = Array(maxCols).fill(0).map((_, i) => {
+    let maxLen = 10; // default
+    wsData.forEach(row => {
+      if (row[i]) {
+        const len = String(row[i]).length;
+        if (len > maxLen) maxLen = len;
+      }
+    });
+    return { wch: Math.min(maxLen + 2, 50) }; // Cap at 50 for sanity
+  });
+  ws['!cols'] = colWidths;
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Consolidated Report');
+  XLSX.writeFile(wb, `${filename}.xlsx`);
+};

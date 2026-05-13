@@ -125,7 +125,7 @@ const STATUS_LABELS = {
   'all': 'ALL STATUSES'
 };
 
-const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned'];
+const STATUS_FILTERS = ['All', 'pending', 'claim_pending', 'approved', 'rejected', 'returned'];
 
 /**
  * Page component for viewing and resolving user claims.
@@ -170,6 +170,23 @@ export default function ClaimsPage() {
     }
     fetchClaims();
   }, []);
+  
+  // Handle auto-opening claim details from notifications
+  useEffect(() => {
+    if (claims.length > 0 && !isDetailOpen && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const claimId = params.get('claimId');
+      if (claimId) {
+        const target = claims.find(c => c.id === claimId);
+        if (target) {
+          setSelectedClaim(target);
+          setIsDetailOpen(true);
+          // Clear URL parameter without refreshing
+          window.history.replaceState({}, '', '/dashboard/claims');
+        }
+      }
+    }
+  }, [claims, isDetailOpen]);
 
   const filteredClaims = useMemo(() => {
     setCurrentPage(1); // Reset page on filter change

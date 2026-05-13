@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }) {
             : `New claim: ${data.itemName || 'Item #' + doc.id.slice(-4)}`,
           time: docTime,
           unread: true,
-          link: '/dashboard/claims'
+          link: `/dashboard/claims?claimId=${doc.id}`
         };
       });
       updateNotifs();
