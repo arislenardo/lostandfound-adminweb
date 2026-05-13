@@ -175,6 +175,39 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
     }
   };
 
+  /**
+   * Re-opens the chat session, allowing replies from both parties again.
+   */
+  const handleUnlockSession = async () => {
+    if (!window.confirm("Re-open this chat session? Both parties will be able to reply again.")) return;
+
+    setSending(true);
+    try {
+      const sortedIds = [adminUser.uid, user.id].sort();
+      const chatId = `${sortedIds[0]}_${sortedIds[1]}`;
+
+      // Mark chat as open
+      await setDoc(doc(db, 'closed_chats', chatId), { closed: false });
+
+      // Send a system message so the user knows it's open
+      await addDoc(collection(db, 'messages'), {
+        text: "The session has been re-opened by the administrator.",
+        senderId: adminUser.uid,
+        receiverId: user.id,
+        senderName: "System",
+        participants: [adminUser.uid, user.id],
+        timestamp: serverTimestamp(),
+        isRead: false,
+      });
+
+    } catch (e) {
+      console.error('Failed to unlock session:', e);
+      alert('Failed to unlock session: ' + e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (!isOpen || !user) return null;
 
   return (
@@ -183,7 +216,7 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
         <div className={styles.modalHeader}>
           <h2>Message: {user.name || user.email || user.id} {isClosed && <span style={{ color: 'var(--error)', fontSize: '0.8rem', marginLeft: '8px' }}>(Closed)</span>}</h2>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {!isClosed && (
+            {!isClosed ? (
               <button
                 onClick={handleEndSession}
                 className={msgStyles.sendBtn}
@@ -191,6 +224,15 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
                 disabled={sending}
               >
                 🔒 End Session
+              </button>
+            ) : (
+              <button
+                onClick={handleUnlockSession}
+                className={msgStyles.sendBtn}
+                style={{ backgroundColor: 'var(--success)', padding: '4px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                disabled={sending}
+              >
+                🔓 Re-open Session
               </button>
             )}
             <button className={styles.closeBtn} onClick={onClose}>✕</button>
