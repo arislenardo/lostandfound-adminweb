@@ -153,6 +153,9 @@
   object-fit: cover;
   background-color: var(--border);
   border: 1px solid var(--border);
+  /* Performance optimizations for high-res photo decoding during scroll */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .noImage {
