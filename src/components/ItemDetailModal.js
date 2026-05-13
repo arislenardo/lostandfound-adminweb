@@ -190,6 +190,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                     alt={item.name} 
                     fill
                     style={{ objectFit: 'cover', borderRadius: '8px' }}
+                    unoptimized
                  />
               </div>
             ) : (

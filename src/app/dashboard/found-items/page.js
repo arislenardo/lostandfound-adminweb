@@ -322,7 +322,7 @@ export default function FoundItemsPage() {
                 <tr key={item.id}>
                   <td>
                     {item.imageUrl ? (
-                      <Image src={item.imageUrl} alt={item.name || 'Item'} width={44} height={44} className={styles.itemImage} />
+                      <Image src={item.imageUrl} alt={item.name || 'Item'} width={44} height={44} className={styles.itemImage} unoptimized />
                     ) : (
                       <div className={styles.noImage}>N/A</div>
                     )}
