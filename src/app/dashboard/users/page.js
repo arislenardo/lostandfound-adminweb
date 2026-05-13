@@ -72,6 +72,21 @@ export default function UsersPage() {
     fetchAll();
   }, []);
 
+  useEffect(() => {
+    if (users.length > 0 && !isMsgModalOpen && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const chatUserId = params.get('chatUserId');
+      if (chatUserId) {
+        const userToChat = users.find(u => u.id === chatUserId);
+        if (userToChat) {
+          setSelectedUser(userToChat);
+          setIsMsgModalOpen(true);
+          window.history.replaceState({}, '', '/dashboard/users');
+        }
+      }
+    }
+  }, [users, isMsgModalOpen]);
+
   const filtered = useMemo(() => {
     setCurrentPage(1); // Reset to page 1 on active filter/search
     return users.filter(user => {

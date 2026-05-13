@@ -64,6 +64,11 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
         <h2 style={{ margin: '0 0 1.5rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)' }}>Claim Details</h2>
 
         <div style={rowStyle}>
+          <span style={labelStyle}>Item Name</span>
+          <span style={{ ...valueStyle, fontWeight: 600 }}>{claim.itemName || 'Unknown Item'}</span>
+        </div>
+
+        <div style={rowStyle}>
           <span style={labelStyle}>Claim ID</span>
           <span style={{ ...valueStyle, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>{claim.id}</span>
         </div>
@@ -72,8 +77,8 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
           <span style={{ ...valueStyle, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>{claim.itemId || '—'}</span>
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>Claimant UID</span>
-          <span style={{ ...valueStyle, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>{claim.userId || '—'}</span>
+          <span style={labelStyle}>Claimant Email</span>
+          <span style={{ ...valueStyle, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>{claim.userEmail || claim.userId || '—'}</span>
         </div>
         <div style={rowStyle}>
           <span style={labelStyle}>Status</span>
@@ -287,9 +292,10 @@ export default function ClaimsPage() {
     }
 
     const columns = [
+      { header: 'Item Name', key: 'itemName' },
       { header: 'Claim ID', key: 'id' },
       { header: 'Found Item ID', key: 'itemId' },
-      { header: 'Claimant UID', key: 'userId' },
+      { header: 'Claimant Email', key: 'userEmail' },
       { header: 'Status', key: 'status' },
       { header: 'Date Filed', key: 'formattedDate' },
     ];
@@ -403,9 +409,8 @@ export default function ClaimsPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Claim ID</th>
-              <th>Found Item ID</th>
-              <th>Claimant UID</th>
+              <th>Item Name</th>
+              <th>Claimant Email</th>
               <th>Status</th>
               <th>Date Filed</th>
               <th>Actions</th>
@@ -421,9 +426,10 @@ export default function ClaimsPage() {
                   : 'Unknown';
                 return (
                   <tr key={claim.id}>
-                    <td className={styles.idCell} title={claim.id}>{claim.id}</td>
-                    <td className={styles.idCell} title={claim.itemId}>{claim.itemId || '—'}</td>
-                    <td className={styles.idCell} title={claim.userId}>{claim.userId || '—'}</td>
+                    <td style={{ fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={claim.itemName}>
+                      {claim.itemName || 'Unknown Item'}
+                    </td>
+                    <td className={styles.idCell} title={claim.userEmail || claim.userId}>{claim.userEmail || claim.userId || '—'}</td>
                     <td>
                       <span className={getStatusClass(claim.status)}>
                         {STATUS_LABELS[(claim.status || 'pending').toLowerCase()] || claim.status}

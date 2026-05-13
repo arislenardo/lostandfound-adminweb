@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { sendNewMessageNotification } from '@/lib/emailService';
 import styles from './modal.module.css';
 import msgStyles from './message.module.css';
@@ -67,6 +67,13 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
     const unsub2 = onSnapshot(q2, snap => {
       received = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       merge();
+
+      // Mark any unread messages as read so the notification clears!
+      snap.docs.forEach(d => {
+        if (d.data().isRead === false) {
+          updateDoc(doc(db, 'messages', d.id), { isRead: true }).catch(console.error);
+        }
+      });
     });
 
     // Generate deterministic chat ID (matches Android ChatManager logic)

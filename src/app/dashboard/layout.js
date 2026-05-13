@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }) {
           message: `Message: "${data.text?.substring(0, 30)}..."`,
           time: docTime,
           unread: true,
-          link: '/dashboard/users'
+          link: `/dashboard/users?chatUserId=${data.senderId}`
         };
       });
       updateNotifs();
@@ -246,8 +246,8 @@ export default function DashboardLayout({ children }) {
                       <div className={styles.emptyNotif}>All caught up!</div>
                     )}
                   </div>
-                  <div className={styles.dropdownFooter} onClick={() => router.push('/dashboard/audit')}>
-                    View All Activity
+                  <div className={styles.dropdownFooter} onClick={() => router.push('/dashboard/notifications')}>
+                    View All Notifications
                   </div>
                 </div>
               )}
