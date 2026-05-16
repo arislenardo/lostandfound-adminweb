@@ -26,31 +26,15 @@ const CATEGORIES = [
   'Others',
 ];
 
-const FOUND_ITEM_LABELS = {
-  'FOUND': 'Available',
-  'CLAIMED': 'Pending (Claimed)',
-  'CLAIM_PENDING': 'Claim Pending',
-  'RETURNED': 'Returned',
-  'PENDING': 'Pending',
-  'APPROVED': 'Approved',
-  'REJECTED': 'Rejected',
-  'DISPUTED': 'Disputed',
+const STATUS_LABELS = {
+  'found': 'FOUND',
+  'lost': 'LOST',
+  'pending': 'PENDING',
+  'claim_pending': 'CLAIM PENDING',
+  'resolved': 'RESOLVED',
+  'returned': 'RETURNED',
+  'added': 'ADDED'
 };
-
-const LOST_ITEM_LABELS = {
-  'PENDING': 'Searching',
-  'CLAIM_PENDING': 'Claim Pending',
-  'APPROVED': 'Approved',
-  'REJECTED': 'Rejected',
-  'DISPUTED': 'Disputed',
-  'FOUND': 'Resolved (Found Personally)',
-  'RETURNED': 'Resolved (Returned by Station)',
-};
-
-function getStatusLabel(status, type) {
-  const labels = type === 'lost' ? LOST_ITEM_LABELS : FOUND_ITEM_LABELS;
-  return labels[(status || '').toUpperCase()] || status || 'Unknown';
-}
 
 /**
  * Capitalizes the first letter of a given string.
@@ -104,8 +88,8 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
   const dateObj = toDateSafe(item.createdAt);
   const date = dateObj ? dateObj.toLocaleString() : 'Date Unknown';
 
-  const foundStatuses = ['FOUND', 'CLAIMED', 'RETURNED'];
-  const lostStatuses = ['PENDING', 'CLAIM_PENDING', 'RETURNED', 'FOUND'];
+  const foundStatuses = ['found', 'returned'];
+  const lostStatuses = ['lost', 'resolved', 'returned'];
   const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
   const collectionName = type === 'found' ? 'found_items' : 'lost_items';
 
@@ -191,7 +175,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
         <button className={styles.closeBtn} onClick={onClose}>×</button>
-        
+
         <div className={styles.modalHeader}>
           <h2>{type === 'found' ? 'Found Item Details' : 'Lost Item Details'}</h2>
           <span className={styles.itemId}>ID: {item.id}</span>
@@ -201,13 +185,13 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
           <div className={styles.imageSection}>
             {item.imageUrl ? (
               <div className={styles.imageWrapper}>
-                 <Image 
-                    src={item.imageUrl} 
-                    alt={item.name} 
-                    fill
-                    style={{ objectFit: 'cover', borderRadius: '8px' }}
-                    unoptimized
-                 />
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  fill
+                  style={{ objectFit: 'cover', borderRadius: '8px' }}
+                  unoptimized
+                />
               </div>
             ) : (
               <div className={styles.placeholderImage}>No Image Provided</div>
@@ -227,7 +211,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                 <span className={styles.value}>{item.name}</span>
               )}
             </div>
-            
+
             <div className={styles.detailRow}>
               <span className={styles.label}>Category</span>
               {isEditing ? (
@@ -270,7 +254,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
               ) : (
                 <div className={styles.value}>
                   {item.latitude != null && item.longitude != null ? (
-                    <a 
+                    <a
                       href={`https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -280,7 +264,7 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                       <span className={styles.externalHint}>(Open Maps)</span>
                     </a>
                   ) : item.locationName ? (
-                    <a 
+                    <a
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.locationName)}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -315,12 +299,12 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   onChange={e => setFormData(f => ({ ...f, status: e.target.value }))}
                 >
                   {statusOptions.map(s => (
-                    <option key={s} value={s}>{getStatusLabel(s, type)}</option>
+                    <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s.toUpperCase()}</option>
                   ))}
                 </select>
               ) : (
                 <span className={styles.value} style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>
-                  {getStatusLabel(item.status, type)}
+                  {STATUS_LABELS[(item.status || 'active').toLowerCase()] || item.status || 'ACTIVE'}
                 </span>
               )}
             </div>

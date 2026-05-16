@@ -31,9 +31,7 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
     returned: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     resolved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     rejected: { bg: 'var(--error-light)', color: '#b91c1c' },
-    disputed: { bg: 'var(--error-light)', color: '#b91c1c' },
     pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
-    claim_pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
   };
   const sc = statusColors[(claim.status || 'pending').toLowerCase()] || statusColors.pending;
 
@@ -83,15 +81,15 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
         </div>
         <div style={rowStyle}>
           <span style={labelStyle}>Status</span>
-          <span style={{ 
-            display: 'inline-block', 
-            padding: '0.25rem 0.8rem', 
-            borderRadius: '999px', 
-            fontSize: '0.8rem', 
-            fontWeight: 700, 
-            textTransform: 'uppercase', 
-            backgroundColor: sc.bg, 
-            color: sc.color 
+          <span style={{
+            display: 'inline-block',
+            padding: '0.25rem 0.8rem',
+            borderRadius: '999px',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            backgroundColor: sc.bg,
+            color: sc.color
           }}>
             {STATUS_LABELS[(claim.status || 'pending').toLowerCase()] || claim.status || 'PENDING'}
           </span>
@@ -122,12 +120,18 @@ const STATUS_LABELS = {
   'approved': 'APPROVED',
   'rejected': 'REJECTED',
   'returned': 'RETURNED',
-  'disputed': 'DISPUTED',
-  'claim_pending': 'CLAIM PENDING',
   'all': 'ALL STATUSES'
 };
 
-const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned', 'disputed'];
+const FILTER_LABELS = {
+  'pending': 'Pending',
+  'approved': 'Approved',
+  'rejected': 'Rejected',
+  'returned': 'Returned',
+  'all': 'All Statuses'
+};
+
+const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned'];
 
 /**
  * Page component for viewing and resolving user claims.
@@ -140,6 +144,7 @@ export default function ClaimsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -172,7 +177,7 @@ export default function ClaimsPage() {
     }
     fetchClaims();
   }, []);
-  
+
   // Handle auto-opening claim details from notifications
   useEffect(() => {
     if (claims.length > 0 && !isDetailOpen && typeof window !== 'undefined') {
@@ -209,9 +214,16 @@ export default function ClaimsPage() {
           if (claimDate > end) matchesDate = false;
         }
       }
-      return matchesStatus && matchesDate;
+
+      const matchesSearch = !search || 
+        (c.itemName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.userEmail || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.userId || '').toLowerCase().includes(search.toLowerCase()) ||
+        (c.itemId || '').toLowerCase().includes(search.toLowerCase());
+
+      return matchesStatus && matchesDate && matchesSearch;
     });
-  }, [claims, statusFilter, startDate, endDate]);
+  }, [claims, statusFilter, startDate, endDate, search]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredClaims.length / ITEMS_PER_PAGE);
@@ -239,7 +251,7 @@ export default function ClaimsPage() {
         resolvedBy: adminUser?.uid || 'admin'
       });
 
-      // 2. ALSO update the items in found_items/lost_items
+      // 2. If approved, ALSO update the items in found_items/lost_items
       if (newStatus === 'approved' && claim.itemId) {
         await updateDoc(doc(db, 'found_items', claim.itemId), { status: 'returned' });
 
@@ -250,11 +262,6 @@ export default function ClaimsPage() {
             claimedFoundItemId: claim.itemId
           });
         }
-      } else if (newStatus === 'rejected' && claim.lostItemId) {
-        // Sync the rejected status back to the lost item so the user sees it in My Items
-        await updateDoc(doc(db, 'lost_items', claim.lostItemId), {
-          status: 'rejected'
-        });
       }
 
       // 3. Log to admin history
@@ -295,7 +302,7 @@ export default function ClaimsPage() {
 
   const handleExport = (exportStartDate, exportEndDate, format) => {
     let exportData = claims;
-    
+
     if (exportStartDate) {
       const start = new Date(exportStartDate);
       start.setHours(0, 0, 0, 0);
@@ -327,17 +334,17 @@ export default function ClaimsPage() {
     const dataToExport = exportData.map(c => ({
       ...c,
       status: (STATUS_LABELS[(c.status || 'pending').toLowerCase()] || c.status).toUpperCase(),
-      formattedDate: c.timestamp 
-        ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString() 
+      formattedDate: c.timestamp
+        ? new Date(c.timestamp.toDate?.() || c.timestamp).toLocaleString()
         : 'Unknown'
     }));
 
     const dateSuffix = new Date().toISOString().split('T')[0];
     const exportName = `claims_report_${dateSuffix}`;
-    
+
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-    const dateRange = (exportStartDate || exportEndDate) 
-      ? `${formatDate(exportStartDate) || 'Beginning'} to ${formatDate(exportEndDate) || 'Present'}` 
+    const dateRange = (exportStartDate || exportEndDate)
+      ? `${formatDate(exportStartDate) || 'Beginning'} to ${formatDate(exportEndDate) || 'Present'}`
       : null;
 
     if (format === 'pdf') {
@@ -355,7 +362,7 @@ export default function ClaimsPage() {
   const getStatusClass = (status) => {
     const s = (status || 'pending').toLowerCase();
     if (s === 'approved' || s === 'returned') return `${styles.badge} ${styles.statusApproved}`;
-    if (s === 'rejected' || s === 'disputed') return `${styles.badge} ${styles.statusRejected}`;
+    if (s === 'rejected') return `${styles.badge} ${styles.statusRejected}`;
     return `${styles.badge} ${styles.statusPending}`;
   };
 
@@ -375,8 +382,8 @@ export default function ClaimsPage() {
               )}
             </span>
           </div>
-          <button 
-            className={styles.actionBtn} 
+          <button
+            className={styles.actionBtn}
             style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.5rem 1rem' }}
             onClick={() => setIsExportModalOpen(true)}
           >
@@ -388,14 +395,25 @@ export default function ClaimsPage() {
       {/* Filter Bar */}
       <div className={styles.filterBar}>
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Status Filter</label>
+          <label className={styles.filterLabel}>Search</label>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Item name, email, or ID..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Status</label>
           <select
             className={styles.filterSelect}
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
             {STATUS_FILTERS.map(s => (
-              <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+              <option key={s} value={s}>{FILTER_LABELS[s.toLowerCase()] || s}</option>
             ))}
           </select>
         </div>
@@ -423,9 +441,9 @@ export default function ClaimsPage() {
         <button
           className={styles.actionBtn}
           style={{ height: '40px', padding: '0 1rem' }}
-          onClick={() => { setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+          onClick={() => { setSearch(''); setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
         >
-          Reset Filters
+          Reset
         </button>
       </div>
 
@@ -462,6 +480,24 @@ export default function ClaimsPage() {
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {claim.status === 'pending' || !claim.status || claim.status === 'claim_pending' ? (
+                          <>
+                            <button
+                              className={styles.actionBtn}
+                              style={{ borderColor: 'var(--success)', color: 'var(--success-dark)' }}
+                              onClick={() => handleUpdateStatus(claim.id, 'approved')}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              className={styles.actionBtn}
+                              style={{ borderColor: 'var(--error)', color: '#b91c1c' }}
+                              onClick={() => handleUpdateStatus(claim.id, 'rejected')}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        ) : null}
                         <button
                           className={styles.actionBtn}
                           onClick={() => openDetail(claim)}
@@ -508,7 +544,7 @@ export default function ClaimsPage() {
         claim={selectedClaim}
       />
 
-      <ExportModal 
+      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}

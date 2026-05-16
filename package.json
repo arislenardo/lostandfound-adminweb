@@ -16,7 +16,10 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "markdown-it": "^14.1.1",
+    "acorn": "^8.16.0",
+    "@types/markdown-it": "^14.1.2"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -25,5 +28,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": "22"
   }
 }

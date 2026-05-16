@@ -17,11 +17,12 @@ import {
   Bell,
   CheckCircle,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import styles from './dashboard.module.css';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, getDoc, doc } from 'firebase/firestore';
 
 /**
  * Layout component for the admin dashboard, including the sidebar and top navigation.
@@ -59,14 +60,46 @@ export default function DashboardLayout({ children }) {
     let allNotifs = { claims: [], messages: [] };
 
     /**
-     * Updates and sorts the combined notifications from claims and messages.
+     * Updates and sorts the combined notifications from claims and messages,
+     * merging them with persistent storage to ensure they don't disappear automatically.
      */
     const updateNotifs = () => {
-      // Sort in-memory like the phone app's derivedStateOf
-      const combined = [...allNotifs.claims, ...allNotifs.messages]
-        .sort((a, b) => b.time - a.time)
-        .slice(0, 10);
-      setNotifications(combined);
+      const incoming = [...allNotifs.claims, ...allNotifs.messages];
+      
+      setNotifications(prev => {
+        // Load persistent notifications from localStorage if exists
+        const stored = JSON.parse(localStorage.getItem('admin_persistent_notifs') || '[]');
+        
+        // Merge incoming into stored (only if not already there and not dismissed)
+        const dismissedIds = JSON.parse(localStorage.getItem('admin_dismissed_ids') || '[]');
+        
+        let updated = [...stored];
+        let hasNew = false;
+
+        incoming.forEach(newItem => {
+          if (!updated.find(u => u.id === newItem.id) && !dismissedIds.includes(newItem.id)) {
+            updated.push(newItem);
+            hasNew = true;
+          }
+        });
+
+        // Sort by time descending
+        updated.sort((a, b) => new Date(b.time) - new Date(a.time));
+        
+        // Limit to 50 for performance
+        updated = updated.slice(0, 50);
+
+        localStorage.setItem('admin_persistent_notifs', JSON.stringify(updated));
+        
+        if (hasNew) {
+          try {
+            const audio = new Audio('/notification-ping.mp3');
+            audio.play().catch(e => console.log('Autoplay blocked'));
+          } catch (err) {}
+        }
+
+        return updated;
+      });
     };
 
     const unsubClaims = onSnapshot(qClaims, (snap) => {
@@ -81,7 +114,8 @@ export default function DashboardLayout({ children }) {
           message: type === 'dispute'
             ? `Dispute: Claim #${doc.id.slice(-4)} re-opened`
             : `New claim: ${data.itemName || 'Item #' + doc.id.slice(-4)}`,
-          time: docTime,
+          subtext: type === 'claim' ? `By: ${data.userEmail || data.userId || 'Unknown'}` : `Claim ID: ${doc.id.slice(-8)}`,
+          time: docTime.toISOString(), // Store as string for localStorage
           unread: true,
           link: `/dashboard/claims?claimId=${doc.id}`
         };
@@ -89,20 +123,51 @@ export default function DashboardLayout({ children }) {
       updateNotifs();
     }, (err) => console.error("Notif Error (Claims):", err));
 
-    const unsubMessages = onSnapshot(qMessages, (snap) => {
-      allNotifs.messages = snap.docs.map(doc => {
-        const data = doc.data();
+    // Cache to prevent repeated user doc fetches
+    const userEmailCache = {};
+
+    const unsubMessages = onSnapshot(qMessages, async (snap) => {
+      const msgs = await Promise.all(snap.docs.map(async (messageDoc) => {
+        const data = messageDoc.data();
         const docTime = data.timestamp?.toDate?.() ||
           (data.timestamp instanceof Date ? data.timestamp : new Date());
+          
+        let senderDisplay = data.senderEmail || data.senderName;
+        
+        // If it doesn't look like an email, fetch from 'users' collection
+        if (!senderDisplay || !senderDisplay.includes('@')) {
+          if (userEmailCache[data.senderId]) {
+            senderDisplay = userEmailCache[data.senderId];
+          } else {
+            try {
+              const uDoc = await getDoc(doc(db, 'users', data.senderId));
+              if (uDoc.exists() && uDoc.data().email) {
+                senderDisplay = uDoc.data().email;
+                userEmailCache[data.senderId] = senderDisplay;
+              }
+            } catch (err) {
+              console.error("Failed to fetch user email:", err);
+            }
+          }
+        }
+        
+        // Fallback if still no email
+        if (!senderDisplay) {
+          senderDisplay = 'User #' + (data.senderId?.slice(-4) || 'Unknown');
+        }
+
         return {
-          id: doc.id,
+          id: messageDoc.id,
           type: 'message',
-          message: `Message: "${data.text?.substring(0, 30)}..."`,
-          time: docTime,
+          message: `Message from ${senderDisplay}`,
+          subtext: data.text,
+          time: docTime.toISOString(),
           unread: true,
           link: `/dashboard/users?chatUserId=${data.senderId}`
         };
-      });
+      }));
+      
+      allNotifs.messages = msgs;
       updateNotifs();
     }, (err) => console.error("Notif Error (Messages):", err));
 
@@ -124,6 +189,35 @@ export default function DashboardLayout({ children }) {
   if (!user || !isAdmin) {
     return null; // Will redirect via AuthProvider
   }
+
+  const handleDismiss = (id, e) => {
+    e.stopPropagation();
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.id !== id);
+      localStorage.setItem('admin_persistent_notifs', JSON.stringify(updated));
+      
+      // Track dismissed IDs to prevent them from coming back in same session
+      const dismissedIds = JSON.parse(localStorage.getItem('admin_dismissed_ids') || '[]');
+      if (!dismissedIds.includes(id)) {
+        dismissedIds.push(id);
+        localStorage.setItem('admin_dismissed_ids', JSON.stringify(dismissedIds));
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleClearAll = () => {
+    // Add all current IDs to dismissed list
+    const dismissedIds = JSON.parse(localStorage.getItem('admin_dismissed_ids') || '[]');
+    notifications.forEach(n => {
+      if (!dismissedIds.includes(n.id)) dismissedIds.push(n.id);
+    });
+    localStorage.setItem('admin_dismissed_ids', JSON.stringify(dismissedIds));
+    
+    setNotifications([]);
+    localStorage.setItem('admin_persistent_notifs', '[]');
+  };
 
   /**
    * Handles the logout process for the administrator.
@@ -214,7 +308,7 @@ export default function DashboardLayout({ children }) {
                 <div className={styles.notificationDropdown}>
                   <div className={styles.dropdownHeader}>
                     <h3>Notifications</h3>
-                    <span>{notifications.length} New</span>
+                    <button className={styles.clearAllBtn} onClick={handleClearAll}>Clear All</button>
                   </div>
                   <div className={styles.dropdownContent}>
                     {notifications.length > 0 ? (
@@ -237,9 +331,16 @@ export default function DashboardLayout({ children }) {
                             {n.type === 'claim' && <CheckCircle size={16} color="var(--primary)" />}
                           </div>
                           <div className={styles.notifInfo}>
-                            <p>{n.message}</p>
-                            <span>{new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <p className={styles.notifTitleText}>{n.message}</p>
+                            {n.subtext && <p className={styles.notifSubtext}>{n.subtext}</p>}
+                            <div className={styles.notifMetaLine}>
+                              {n.meta && <span className={styles.notifMeta}>{n.meta}</span>}
+                              <span className={styles.notifTime}>{new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
                           </div>
+                          <button className={styles.dismissBtn} onClick={(e) => handleDismiss(n.id, e)}>
+                            <X size={14} />
+                          </button>
                         </div>
                       ))
                     ) : (

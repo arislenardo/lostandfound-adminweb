@@ -34,7 +34,7 @@ const STATUS_LABELS = {
   'FOUND': 'Available',
   'PENDING': 'Pending',
   'CLAIM_PENDING': 'Claim Pending',
-  'CLAIMED': 'Pending (Claimed)',
+  'CLAIMED': 'Pending',
   'RETURNED': 'Returned',
   'ALL': 'All Statuses'
 };
@@ -45,11 +45,12 @@ const STATUS_LABELS = {
  * @returns {string} The CSS class name from table.module.css.
  */
 function getStatusStyle(status) {
-  const s = (status || '').toUpperCase();
-  if (s === 'RETURNED' || s === 'CLAIMED') return styles.statusReturned;
-  if (s === 'CLAIM_PENDING') return styles.statusPending;
-  if (s === 'FOUND') return styles.statusFound;
-  return styles.statusFound; // fallback
+  const s = (status || '').toLowerCase();
+  if (s === 'returned' || s === 'resolved') return styles.statusReturned;
+  if (s === 'pending' || s === 'claim_pending' || s === 'claimed') return styles.statusPending;
+  if (s === 'rejected') return styles.statusRejected;
+  if (s === 'added') return styles.statusAdded;
+  return styles.statusFound; // found → blue
 }
 
 /**
@@ -80,12 +81,12 @@ export default function FoundItemsPage() {
     async function fetchItems() {
       try {
         const q = query(collection(db, 'found_items'), orderBy('createdAt', 'desc'));
-        
+
         const [snap, usersSnap] = await Promise.all([
           getDocs(q),
           getDocs(collection(db, 'users'))
         ]);
-        
+
         const usersMap = {};
         usersSnap.forEach(doc => {
           usersMap[doc.id] = doc.data().email || 'No Email';
@@ -99,7 +100,7 @@ export default function FoundItemsPage() {
             userEmail: usersMap[data.userId] || data.userId // Fallback to UID if email not found
           };
         });
-        
+
         setItems(fetchedItems);
       } catch (error) {
         console.error("Error fetching found items:", error);
@@ -170,7 +171,7 @@ export default function FoundItemsPage() {
 
   const handleExport = (startDate, endDate, format) => {
     let exportData = items;
-    
+
     if (startDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -201,18 +202,18 @@ export default function FoundItemsPage() {
 
     const dataToExport = exportData.map(item => ({
       ...item,
-      status: (STATUS_LABELS[(item.status || 'FOUND').toUpperCase()] || item.status || 'FOUND').toUpperCase(),
-      formattedDate: item.createdAt 
-        ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() 
+      status: (STATUS_LABELS[(item.status || 'found').toUpperCase()] || item.status).toUpperCase(),
+      formattedDate: item.createdAt
+        ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString()
         : 'N/A'
     }));
 
     const dateSuffix = new Date().toISOString().split('T')[0];
     const exportName = `found_items_report_${dateSuffix}`;
-    
+
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-    const dateRange = (startDate || endDate) 
-      ? `${formatDate(startDate) || 'Beginning'} to ${formatDate(endDate) || 'Present'}` 
+    const dateRange = (startDate || endDate)
+      ? `${formatDate(startDate) || 'Beginning'} to ${formatDate(endDate) || 'Present'}`
       : null;
 
     if (format === 'pdf') {
@@ -238,8 +239,8 @@ export default function FoundItemsPage() {
               )}
             </span>
           </div>
-          <button 
-            className={styles.actionBtn} 
+          <button
+            className={styles.actionBtn}
             style={{ backgroundColor: 'var(--primary)', color: 'white', padding: '0.5rem 1rem' }}
             onClick={() => setIsExportModalOpen(true)}
           >
@@ -294,7 +295,7 @@ export default function FoundItemsPage() {
         <button
           className={styles.actionBtn}
           style={{ padding: '0.5rem 1rem', alignSelf: 'flex-end', height: '38px' }}
-          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('ALL'); setStartDate(''); setEndDate(''); }}
         >
           Reset
         </button>
@@ -334,7 +335,7 @@ export default function FoundItemsPage() {
                   </td>
                   <td>
                     <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
-                      {STATUS_LABELS[(item.status || 'FOUND').toUpperCase()] || item.status}
+                      {STATUS_LABELS[(item.status || 'found').toUpperCase()] || item.status}
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
@@ -399,7 +400,7 @@ export default function FoundItemsPage() {
         }}
       />
 
-      <ExportModal 
+      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}

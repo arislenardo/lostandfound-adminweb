@@ -325,7 +325,13 @@ export default function AuditPage() {
           />
         </div>
 
-        <button className={styles.resetBtn} onClick={handleReset}>Reset</button>
+        <button 
+          className={styles.actionBtn} 
+          style={{ height: '38px', padding: '0 1.25rem' }} 
+          onClick={handleReset}
+        >
+          Reset
+        </button>
       </div>
 
       <div className={styles.tableWrapper}>

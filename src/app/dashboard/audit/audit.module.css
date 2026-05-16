@@ -106,18 +106,7 @@
 .filterInput:focus {
   border-color: var(--primary);
 }
-.resetBtn {
-  padding: 1rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  transition: 0.2s;
-  height: fit-content;
-}
-.resetBtn:hover {
-  background: rgba(92, 61, 30, 0.05);
-}
+
 
 /* Pagination Control */
 .pagination {

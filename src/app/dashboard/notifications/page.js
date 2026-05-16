@@ -18,53 +18,25 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!user || !isAdmin) return;
 
-    async function fetchNotifications() {
-      try {
-        const qClaims = query(collection(db, 'claims'), where('status', 'in', ['pending', 'disputed']));
-        const qMessages = query(collection(db, 'messages'), where('receiverId', '==', user.uid), where('isRead', '==', false));
-
-        const [claimsSnap, messagesSnap] = await Promise.all([getDocs(qClaims), getDocs(qMessages)]);
-
-        const allNotifs = [];
-
-        claimsSnap.forEach(doc => {
-          const data = doc.data();
-          const type = data.status === 'disputed' ? 'dispute' : 'claim';
-          const docTime = data.timestamp?.toDate?.() || (data.timestamp instanceof Date ? data.timestamp : new Date());
-          allNotifs.push({
-            id: doc.id,
-            type: type,
-            message: type === 'dispute' ? `Dispute: Claim #${doc.id.slice(-4)} re-opened` : `New claim: ${data.itemName || 'Item #' + doc.id.slice(-4)}`,
-            time: docTime,
-            link: `/dashboard/claims?claimId=${doc.id}`,
-            status: data.status
-          });
-        });
-
-        messagesSnap.forEach(doc => {
-          const data = doc.data();
-          const docTime = data.timestamp?.toDate?.() || (data.timestamp instanceof Date ? data.timestamp : new Date());
-          allNotifs.push({
-            id: doc.id,
-            type: 'message',
-            message: `Message: "${data.text?.substring(0, 30)}..."`,
-            time: docTime,
-            link: `/dashboard/users?chatUserId=${data.senderId}`,
-            status: 'unread'
-          });
-        });
-
-        allNotifs.sort((a, b) => b.time - a.time);
-        setNotifications(allNotifs);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchNotifications();
+    // Load from persistent storage
+    const stored = JSON.parse(localStorage.getItem('admin_persistent_notifs') || '[]');
+    setNotifications(stored);
+    setLoading(false);
   }, [user, isAdmin]);
+
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to clear all notifications?')) {
+      const dismissedIds = JSON.parse(localStorage.getItem('admin_dismissed_ids') || '[]');
+      notifications.forEach(n => {
+        if (!dismissedIds.includes(n.id)) dismissedIds.push(n.id);
+      });
+      localStorage.setItem('admin_dismissed_ids', JSON.stringify(dismissedIds));
+      localStorage.setItem('admin_persistent_notifs', '[]');
+      setNotifications([]);
+      // Force layout update if possible (not easy, but next refresh will catch it)
+      window.location.reload();
+    }
+  };
 
   const totalPages = Math.ceil(notifications.length / ITEMS_PER_PAGE);
   const paginatedNotifs = notifications.slice(
@@ -77,14 +49,25 @@ export default function NotificationsPage() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <h2>All Notifications</h2>
-        <span>
-          {notifications.length > 0 ? (
-            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of ${notifications.length} notifications`
-          ) : (
-            '0 notifications'
-          )}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <h2>All Notifications</h2>
+          <span>
+            {notifications.length > 0 ? (
+              `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, notifications.length)} of ${notifications.length} notifications`
+            ) : (
+              '0 notifications'
+            )}
+          </span>
+        </div>
+        {notifications.length > 0 && (
+          <button 
+            className={styles.actionBtn} 
+            style={{ backgroundColor: 'var(--error)', color: 'white', borderColor: 'var(--error)' }}
+            onClick={handleClearAll}
+          >
+            Clear All History
+          </button>
+        )}
       </div>
 
       <div className={styles.tableWrapper}>
@@ -112,8 +95,12 @@ export default function NotificationsPage() {
                       {notif.type}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 500 }}>{notif.message}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{new Date(notif.time).toLocaleString()}</td>
+                  <td>
+                    <div style={{ fontWeight: 600, color: 'var(--brown)' }}>{notif.message}</div>
+                    {notif.subtext && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 400 }}>{notif.subtext}</div>}
+                    {notif.meta && <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '0.1rem', fontWeight: 500 }}>{notif.meta}</div>}
+                  </td>
+                  <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(notif.time).toLocaleString()}</td>
                   <td>
                     <button className={styles.actionBtn} onClick={() => router.push(notif.link)}>
                       View Details
