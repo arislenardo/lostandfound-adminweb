@@ -31,6 +31,7 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
     returned: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     resolved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     rejected: { bg: 'var(--error-light)', color: '#b91c1c' },
+    disputed: { bg: 'var(--error-light)', color: '#b91c1c' },
     pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
     claim_pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
   };
@@ -121,11 +122,12 @@ const STATUS_LABELS = {
   'approved': 'APPROVED',
   'rejected': 'REJECTED',
   'returned': 'RETURNED',
+  'disputed': 'DISPUTED',
   'claim_pending': 'CLAIM PENDING',
   'all': 'ALL STATUSES'
 };
 
-const STATUS_FILTERS = ['All', 'pending', 'claim_pending', 'approved', 'rejected', 'returned'];
+const STATUS_FILTERS = ['All', 'pending', 'approved', 'rejected', 'returned', 'disputed'];
 
 /**
  * Page component for viewing and resolving user claims.
@@ -237,7 +239,7 @@ export default function ClaimsPage() {
         resolvedBy: adminUser?.uid || 'admin'
       });
 
-      // 2. If approved, ALSO update the items in found_items/lost_items
+      // 2. ALSO update the items in found_items/lost_items
       if (newStatus === 'approved' && claim.itemId) {
         await updateDoc(doc(db, 'found_items', claim.itemId), { status: 'returned' });
 
@@ -248,6 +250,11 @@ export default function ClaimsPage() {
             claimedFoundItemId: claim.itemId
           });
         }
+      } else if (newStatus === 'rejected' && claim.lostItemId) {
+        // Sync the rejected status back to the lost item so the user sees it in My Items
+        await updateDoc(doc(db, 'lost_items', claim.lostItemId), {
+          status: 'rejected'
+        });
       }
 
       // 3. Log to admin history
@@ -348,7 +355,7 @@ export default function ClaimsPage() {
   const getStatusClass = (status) => {
     const s = (status || 'pending').toLowerCase();
     if (s === 'approved' || s === 'returned') return `${styles.badge} ${styles.statusApproved}`;
-    if (s === 'rejected') return `${styles.badge} ${styles.statusRejected}`;
+    if (s === 'rejected' || s === 'disputed') return `${styles.badge} ${styles.statusRejected}`;
     return `${styles.badge} ${styles.statusPending}`;
   };
 
@@ -455,24 +462,6 @@ export default function ClaimsPage() {
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {claim.status === 'pending' || !claim.status || claim.status === 'claim_pending' ? (
-                          <>
-                            <button
-                              className={styles.actionBtn}
-                              style={{ borderColor: 'var(--success)', color: 'var(--success-dark)' }}
-                              onClick={() => handleUpdateStatus(claim.id, 'approved')}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              className={styles.actionBtn}
-                              style={{ borderColor: 'var(--error)', color: '#b91c1c' }}
-                              onClick={() => handleUpdateStatus(claim.id, 'rejected')}
-                            >
-                              Reject
-                            </button>
-                          </>
-                        ) : null}
                         <button
                           className={styles.actionBtn}
                           onClick={() => openDetail(claim)}

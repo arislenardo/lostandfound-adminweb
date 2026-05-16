@@ -209,9 +209,14 @@ export default function DashboardOverview() {
         <div className={`${styles.statCard} ${stats.pendingClaims > 0 ? styles.alertCard : ''}`}>
           <div className={styles.statHeader}>
             <h3>Pending Claims</h3>
+            {stats.pendingClaims > 0 && (
+              <span className={styles.alertBadge} title="Action Required">!</span>
+            )}
           </div>
           <div className={styles.statValue}>{stats.pendingClaims}</div>
-          <p className={styles.statDesc}>Require manual admin review</p>
+          <p className={styles.statDesc}>
+            {stats.pendingClaims > 0 ? '⚠️ Action Required' : 'All claims resolved'}
+          </p>
         </div>
 
         <div className={styles.statCard}>
