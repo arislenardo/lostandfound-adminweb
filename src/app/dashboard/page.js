@@ -87,7 +87,7 @@ export default function DashboardOverview() {
 
     const sections = [
       {
-        title: 'Summary Overview',
+        title: 'Summary Dashboard',
         columns: [
           { header: 'Metric', key: 'metric' },
           { header: 'Count / Value', key: 'value' }

@@ -26,15 +26,31 @@ const CATEGORIES = [
   'Others',
 ];
 
-const STATUS_LABELS = {
-  'found': 'FOUND',
-  'lost': 'LOST',
-  'pending': 'PENDING',
-  'claim_pending': 'CLAIM PENDING',
-  'resolved': 'RESOLVED',
-  'returned': 'RETURNED',
-  'added': 'ADDED'
+const FOUND_ITEM_LABELS = {
+  'FOUND': 'Available',
+  'CLAIMED': 'Pending (Claimed)',
+  'CLAIM_PENDING': 'Claim Pending',
+  'RETURNED': 'Returned',
+  'PENDING': 'Pending',
+  'APPROVED': 'Approved',
+  'REJECTED': 'Rejected',
+  'DISPUTED': 'Disputed',
 };
+
+const LOST_ITEM_LABELS = {
+  'PENDING': 'Searching',
+  'CLAIM_PENDING': 'Claim Pending',
+  'APPROVED': 'Approved',
+  'REJECTED': 'Rejected',
+  'DISPUTED': 'Disputed',
+  'FOUND': 'Resolved (Found Personally)',
+  'RETURNED': 'Resolved (Returned by Station)',
+};
+
+function getStatusLabel(status, type) {
+  const labels = type === 'lost' ? LOST_ITEM_LABELS : FOUND_ITEM_LABELS;
+  return labels[(status || '').toUpperCase()] || status || 'Unknown';
+}
 
 /**
  * Capitalizes the first letter of a given string.
@@ -88,8 +104,8 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
   const dateObj = toDateSafe(item.createdAt);
   const date = dateObj ? dateObj.toLocaleString() : 'Date Unknown';
 
-  const foundStatuses = ['found', 'returned'];
-  const lostStatuses = ['lost', 'resolved', 'returned'];
+  const foundStatuses = ['FOUND', 'CLAIMED', 'RETURNED'];
+  const lostStatuses = ['PENDING', 'CLAIM_PENDING', 'RETURNED', 'FOUND'];
   const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
   const collectionName = type === 'found' ? 'found_items' : 'lost_items';
 
@@ -299,12 +315,12 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   onChange={e => setFormData(f => ({ ...f, status: e.target.value }))}
                 >
                   {statusOptions.map(s => (
-                    <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s.toUpperCase()}</option>
+                    <option key={s} value={s}>{getStatusLabel(s, type)}</option>
                   ))}
                 </select>
               ) : (
                 <span className={styles.value} style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>
-                  {STATUS_LABELS[(item.status || 'active').toLowerCase()] || item.status || 'ACTIVE'}
+                  {getStatusLabel(item.status, type)}
                 </span>
               )}
             </div>

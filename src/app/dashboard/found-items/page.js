@@ -31,12 +31,12 @@ const CATEGORIES = [
 ];
 
 const STATUS_LABELS = {
-  'found': 'Found',
-  'pending': 'Pending',
-  'claim_pending': 'Claim Pending',
-  'added': 'Added',
-  'returned': 'Returned',
-  'all': 'All Statuses'
+  'FOUND': 'Available',
+  'PENDING': 'Pending',
+  'CLAIM_PENDING': 'Claim Pending',
+  'CLAIMED': 'Pending (Claimed)',
+  'RETURNED': 'Returned',
+  'ALL': 'All Statuses'
 };
 
 /**
@@ -45,12 +45,11 @@ const STATUS_LABELS = {
  * @returns {string} The CSS class name from table.module.css.
  */
 function getStatusStyle(status) {
-  const s = (status || '').toLowerCase();
-  if (s === 'returned' || s === 'resolved' || s === 'claimed') return styles.statusReturned;
-  if (s === 'pending' || s === 'claim_pending') return styles.statusPending;
-  if (s === 'rejected') return styles.statusRejected;
-  if (s === 'added') return styles.statusAdded;
-  return styles.statusFound; // found → blue
+  const s = (status || '').toUpperCase();
+  if (s === 'RETURNED' || s === 'CLAIMED') return styles.statusReturned;
+  if (s === 'CLAIM_PENDING') return styles.statusPending;
+  if (s === 'FOUND') return styles.statusFound;
+  return styles.statusFound; // fallback
 }
 
 /**
@@ -67,7 +66,7 @@ export default function FoundItemsPage() {
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,8 +118,8 @@ export default function FoundItemsPage() {
         item.id.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' ||
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
-      const matchesStatus = statusFilter === 'All' ||
-        (item.status || '').toLowerCase() === statusFilter;
+      const matchesStatus = statusFilter === 'ALL' ||
+        (item.status || '').toUpperCase() === statusFilter;
 
       let matchesDate = true;
       if (item.createdAt) {
@@ -202,7 +201,7 @@ export default function FoundItemsPage() {
 
     const dataToExport = exportData.map(item => ({
       ...item,
-      status: (STATUS_LABELS[(item.status || 'found').toLowerCase()] || item.status).toUpperCase(),
+      status: (STATUS_LABELS[(item.status || 'FOUND').toUpperCase()] || item.status || 'FOUND').toUpperCase(),
       formattedDate: item.createdAt 
         ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() 
         : 'N/A'
@@ -269,8 +268,8 @@ export default function FoundItemsPage() {
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Status</label>
           <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {['All', 'found', 'pending', 'claim_pending', 'added', 'returned'].map(s => (
-              <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+            {['ALL', 'FOUND', 'CLAIMED', 'RETURNED'].map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
             ))}
           </select>
         </div>
@@ -335,7 +334,7 @@ export default function FoundItemsPage() {
                   </td>
                   <td>
                     <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
-                      {STATUS_LABELS[(item.status || 'found').toLowerCase()] || item.status}
+                      {STATUS_LABELS[(item.status || 'FOUND').toUpperCase()] || item.status}
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>

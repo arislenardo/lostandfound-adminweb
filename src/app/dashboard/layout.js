@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }) {
   };
 
   const navItems = [
-    { name: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={2} /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={20} strokeWidth={2} /> },
     { name: 'Found Items', path: '/dashboard/found-items', icon: <PackageCheck size={20} strokeWidth={2} /> },
     { name: 'Lost Items', path: '/dashboard/lost-items', icon: <PackageMinus size={20} strokeWidth={2} /> },
     { name: 'Claims', path: '/dashboard/claims', icon: <ClipboardList size={20} strokeWidth={2} /> },

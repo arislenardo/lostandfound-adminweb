@@ -31,12 +31,14 @@ const CATEGORIES = [
 ];
 
 const STATUS_LABELS = {
-  'lost': 'Lost',
-  'pending': 'Pending',
-  'claim_pending': 'Claim Pending',
-  'resolved': 'Resolved',
-  'returned': 'Returned',
-  'all': 'All Statuses'
+  'PENDING': 'Searching',
+  'CLAIM_PENDING': 'Claim Pending',
+  'APPROVED': 'Approved',
+  'REJECTED': 'Rejected',
+  'DISPUTED': 'Disputed',
+  'FOUND': 'Resolved (Found Personally)',
+  'RETURNED': 'Resolved (Returned by Station)',
+  'ALL': 'All Statuses'
 };
 
 /**
@@ -45,11 +47,11 @@ const STATUS_LABELS = {
  * @returns {string} The CSS class name from table.module.css.
  */
 function getStatusStyle(status) {
-  const s = (status || '').toLowerCase();
-  if (s === 'resolved' || s === 'returned' || s === 'claimed') return styles.statusResolved;
-  if (s === 'pending' || s === 'claim_pending') return styles.statusPending;
-  if (s === 'rejected') return styles.statusRejected;
-  return styles.statusLost; // lost → blue
+  const s = (status || '').toUpperCase();
+  if (s === 'FOUND' || s === 'RETURNED' || s === 'APPROVED') return styles.statusResolved;
+  if (s === 'CLAIM_PENDING' || s === 'DISPUTED') return styles.statusPending;
+  if (s === 'REJECTED') return styles.statusRejected;
+  return styles.statusLost; // PENDING → blue
 }
 
 /**
@@ -66,7 +68,7 @@ export default function LostItemsPage() {
 
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,8 +120,8 @@ export default function LostItemsPage() {
         item.id.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' ||
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
-      const matchesStatus = statusFilter === 'All' ||
-        (item.status || '').toLowerCase() === statusFilter;
+      const matchesStatus = statusFilter === 'ALL' ||
+        (item.status || '').toUpperCase() === statusFilter;
 
       let matchesDate = true;
       if (item.createdAt) {
@@ -201,7 +203,7 @@ export default function LostItemsPage() {
 
     const dataToExport = exportData.map(item => ({
       ...item,
-      status: (STATUS_LABELS[(item.status || 'lost').toLowerCase()] || item.status).toUpperCase(),
+      status: (STATUS_LABELS[(item.status || 'PENDING').toUpperCase()] || item.status || 'PENDING').toUpperCase(),
       formattedDate: item.createdAt 
         ? new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleString() 
         : 'N/A'
@@ -268,8 +270,8 @@ export default function LostItemsPage() {
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Status</label>
           <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {['All', 'lost', 'pending', 'claim_pending', 'resolved', 'returned'].map(s => (
-              <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s}</option>
+            {['ALL', 'PENDING', 'CLAIM_PENDING', 'RETURNED', 'FOUND'].map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
             ))}
           </select>
         </div>
@@ -294,7 +296,7 @@ export default function LostItemsPage() {
         <button
           className={styles.actionBtn}
           style={{ padding: '0.5rem 1rem', alignSelf: 'flex-end', height: '38px' }}
-          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('All'); setStartDate(''); setEndDate(''); }}
+          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('ALL'); setStartDate(''); setEndDate(''); }}
         >
           Reset
         </button>
@@ -334,7 +336,7 @@ export default function LostItemsPage() {
                   </td>
                   <td>
                     <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
-                      {STATUS_LABELS[(item.status || 'lost').toLowerCase()] || item.status}
+                      {STATUS_LABELS[(item.status || 'PENDING').toUpperCase()] || item.status}
                     </span>
                   </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
