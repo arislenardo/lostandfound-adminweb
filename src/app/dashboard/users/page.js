@@ -237,11 +237,7 @@ export default function UsersPage() {
                           Message
                         </button>
                         <button
-                          className={styles.actionBtn}
-                          style={{
-                            borderColor: isAdmin ? 'var(--warning)' : 'var(--primary)',
-                            color: isAdmin ? '#c2410c' : 'var(--primary)',
-                          }}
+                          className={isAdmin ? styles.actionBtnWarning : styles.actionBtn}
                           onClick={() => handleToggleAdmin(user)}
                         >
                           {isAdmin ? 'Revoke' : 'Make Admin'}

@@ -483,15 +483,13 @@ export default function ClaimsPage() {
                         {claim.status === 'pending' || !claim.status || claim.status === 'claim_pending' ? (
                           <>
                             <button
-                              className={styles.actionBtn}
-                              style={{ borderColor: 'var(--success)', color: 'var(--success-dark)' }}
+                              className={styles.actionBtnSuccess}
                               onClick={() => handleUpdateStatus(claim.id, 'approved')}
                             >
                               Approve
                             </button>
                             <button
-                              className={styles.actionBtn}
-                              style={{ borderColor: 'var(--error)', color: '#b91c1c' }}
+                              className={styles.actionBtnError}
                               onClick={() => handleUpdateStatus(claim.id, 'rejected')}
                             >
                               Reject

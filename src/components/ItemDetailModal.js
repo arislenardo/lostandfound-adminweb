@@ -27,13 +27,11 @@ const CATEGORIES = [
 ];
 
 const STATUS_LABELS = {
-  'found': 'FOUND',
-  'lost': 'LOST',
-  'pending': 'PENDING',
-  'claim_pending': 'CLAIM PENDING',
-  'resolved': 'RESOLVED',
-  'returned': 'RETURNED',
-  'added': 'ADDED'
+  'FOUND': 'AVAILABLE',
+  'PENDING': 'PENDING',
+  'CLAIM_PENDING': 'CLAIM PENDING',
+  'RESOLVED': 'RESOLVED',
+  'RETURNED': 'RETURNED',
 };
 
 /**
@@ -88,8 +86,8 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
   const dateObj = toDateSafe(item.createdAt);
   const date = dateObj ? dateObj.toLocaleString() : 'Date Unknown';
 
-  const foundStatuses = ['found', 'returned'];
-  const lostStatuses = ['lost', 'resolved', 'returned'];
+  const foundStatuses = ['FOUND', 'PENDING', 'CLAIM_PENDING', 'RETURNED'];
+  const lostStatuses = ['PENDING', 'CLAIM_PENDING', 'RESOLVED'];
   const statusOptions = type === 'found' ? foundStatuses : lostStatuses;
   const collectionName = type === 'found' ? 'found_items' : 'lost_items';
 
@@ -299,50 +297,60 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   onChange={e => setFormData(f => ({ ...f, status: e.target.value }))}
                 >
                   {statusOptions.map(s => (
-                    <option key={s} value={s}>{STATUS_LABELS[s.toLowerCase()] || s.toUpperCase()}</option>
+                    <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
                   ))}
                 </select>
               ) : (
                 <span className={styles.value} style={{ textTransform: 'uppercase', fontWeight: 'bold' }}>
-                  {STATUS_LABELS[(item.status || 'active').toLowerCase()] || item.status || 'ACTIVE'}
+                  {STATUS_LABELS[item.status] || item.status || 'PENDING'}
                 </span>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
               {isEditing ? (
                 <>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className={styles.saveBtn}
-                  >
+                  <button onClick={handleSave} disabled={saving} className={styles.saveBtn}>
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button
-                    onClick={handleCancel}
-                    disabled={saving}
-                    className={styles.cancelBtn}
-                    style={{
-                      padding: '0.5rem 1.25rem',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border)',
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-muted)',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                    }}
-                  >
+                  <button onClick={handleCancel} disabled={saving} className={styles.cancelBtn}>
                     Cancel
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={handleStartEdit}
-                  className={styles.editBtn}
-                >
-                  Edit Item
-                </button>
+                <>
+                  <button onClick={handleStartEdit} className={styles.editBtn}>
+                    Edit Item
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (window.confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+                        try {
+                          setSaving(true);
+                          const { deleteDoc, doc } = await import('firebase/firestore');
+                          await deleteDoc(doc(db, collectionName, item.id));
+                          await addDoc(collection(db, 'admin_history'), {
+                            adminId: auth.currentUser?.uid || 'unknown',
+                            adminName: auth.currentUser?.email || 'Admin',
+                            actionType: type === 'found' ? 'DELETED_FOUND_ITEM' : 'DELETED_LOST_ITEM',
+                            itemTitle: item.name,
+                            itemId: item.id,
+                            timestamp: serverTimestamp(),
+                          });
+                          onUpdate(item.id, null); // null indicates deletion
+                          onClose();
+                        } catch (err) {
+                          alert(`Delete failed: ${err.message}`);
+                        } finally {
+                          setSaving(false);
+                        }
+                      }
+                    }}
+                    className={styles.deleteBtn}
+                  >
+                    Delete Item
+                  </button>
+                </>
               )}
             </div>
           </div>

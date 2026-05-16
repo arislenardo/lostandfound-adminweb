@@ -230,3 +230,39 @@
   background-color: var(--primary);
   color: white;
 }
+
+.deleteBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--error);
+  background-color: transparent;
+  color: var(--error);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+  background-color: var(--error);
+  color: white;
+  box-shadow: 0 10px 20px -5px rgba(220, 38, 38, 0.3);
+  transform: translateY(-2px);
+}
+
+.cancelBtn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover {
+  background-color: var(--cream);
+  color: var(--brown);
+  border-color: var(--text-muted);
+}

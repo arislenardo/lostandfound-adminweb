@@ -256,6 +256,57 @@
   color: white;
 }
 
+.actionBtnSuccess {
+  padding: 0.3rem 0.6rem;
+  background-color: transparent;
+  color: var(--success-dark);
+  border: 1px solid var(--success);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionBtnSuccess:hover {
+  background-color: var(--success);
+  color: white;
+}
+
+.actionBtnError {
+  padding: 0.3rem 0.6rem;
+  background-color: transparent;
+  color: #b91c1c;
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionBtnError:hover {
+  background-color: var(--error);
+  color: white;
+}
+
+.actionBtnWarning {
+  padding: 0.3rem 0.6rem;
+  background-color: transparent;
+  color: #c2410c;
+  border: 1px solid var(--warning);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionBtnWarning:hover {
+  background-color: var(--warning);
+  color: white;
+}
+
 .emptyState {
   padding: 3rem;
   text-align: center;

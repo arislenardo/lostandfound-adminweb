@@ -349,13 +349,6 @@ export default function FoundItemsPage() {
                       <button className={styles.actionBtn} onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}>
                         Edit/View
                       </button>
-                      <button
-                        className={styles.actionBtn}
-                        style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        Delete
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -395,8 +388,12 @@ export default function FoundItemsPage() {
         item={selectedItem}
         type="found"
         onUpdate={(itemId, updatedFields) => {
-          setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
-          setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
+          if (updatedFields === null) {
+            setItems(prev => prev.filter(i => i.id !== itemId));
+          } else {
+            setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
+            setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
+          }
         }}
       />
 

@@ -36,8 +36,9 @@ const STATUS_LABELS = {
   'APPROVED': 'Approved',
   'REJECTED': 'Rejected',
   'DISPUTED': 'Disputed',
-  'FOUND': 'Resolved (Found Personally)',
-  'RETURNED': 'Resolved (Returned by Station)',
+  'FOUND': 'Resolved',
+  'RETURNED': 'Resolved',
+  'RESOLVED': 'Resolved',
   'ALL': 'All Statuses'
 };
 
@@ -120,8 +121,14 @@ export default function LostItemsPage() {
         item.id.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' ||
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
-      const matchesStatus = statusFilter === 'ALL' ||
-        (item.status || '').toUpperCase() === statusFilter;
+      let matchesStatus = true;
+      if (statusFilter !== 'ALL') {
+        if (statusFilter === 'RESOLVED') {
+          matchesStatus = (item.status || '').toUpperCase() === 'FOUND' || (item.status || '').toUpperCase() === 'RETURNED';
+        } else {
+          matchesStatus = (item.status || '').toUpperCase() === statusFilter;
+        }
+      }
 
       let matchesDate = true;
       if (item.createdAt) {
@@ -270,7 +277,7 @@ export default function LostItemsPage() {
         <div className={styles.filterGroup}>
           <label className={styles.filterLabel}>Status</label>
           <select className={styles.filterSelect} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            {['ALL', 'PENDING', 'CLAIM_PENDING', 'RETURNED', 'FOUND'].map(s => (
+            {['ALL', 'PENDING', 'CLAIM_PENDING', 'RESOLVED'].map(s => (
               <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
             ))}
           </select>
@@ -350,13 +357,6 @@ export default function LostItemsPage() {
                       <button className={styles.actionBtn} onClick={() => { setSelectedItem(item); setIsModalOpen(true); }}>
                         Edit/View
                       </button>
-                      <button
-                        className={styles.actionBtn}
-                        style={{ borderColor: 'var(--error)', color: 'var(--error)' }}
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        Delete
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -396,8 +396,12 @@ export default function LostItemsPage() {
         item={selectedItem}
         type="lost"
         onUpdate={(itemId, updatedFields) => {
-          setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
-          setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
+          if (updatedFields === null) {
+            setItems(prev => prev.filter(i => i.id !== itemId));
+          } else {
+            setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updatedFields } : i));
+            setSelectedItem(prev => prev ? { ...prev, ...updatedFields } : prev);
+          }
         }}
       />
 
