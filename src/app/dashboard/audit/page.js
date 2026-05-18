@@ -21,6 +21,18 @@ const ACTION_LABELS = {
   GRANTED_ADMIN: 'Granted Admin',
 };
 
+const ACTION_ORDER = [
+  'ADDED_FOUND_ITEM',
+  'ADDED_LOST_ITEM',
+  'DELETED_FOUND_ITEM',
+  'DELETED_LOST_ITEM',
+  'RETURNED_ITEM',
+  'APPROVED_CLAIM',
+  'REJECTED_CLAIM',
+  'GRANTED_ADMIN',
+  'REVOKED_ADMIN',
+];
+
 /**
  * Component for displaying the detailed view of a specific audit log entry.
  * @param {Object} props - The component props.
@@ -154,7 +166,16 @@ export default function AuditPage() {
   const uniqueActions = useMemo(() => {
     const actions = new Set(logs.map(log => log.actionType));
     const filtered = Array.from(actions).filter(a => ACTION_LABELS[a]);
-    return ['All', ...filtered.sort()];
+    return ['All', ...filtered.sort((a, b) => {
+      let idxA = ACTION_ORDER.indexOf(a);
+      let idxB = ACTION_ORDER.indexOf(b);
+      if (idxA === -1) idxA = Infinity;
+      if (idxB === -1) idxB = Infinity;
+      if (idxA !== idxB) {
+        return idxA - idxB;
+      }
+      return a.localeCompare(b);
+    })];
   }, [logs]);
 
   const filteredLogs = useMemo(() => {

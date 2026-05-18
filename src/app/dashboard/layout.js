@@ -45,16 +45,14 @@ export default function DashboardLayout({ children }) {
     // 1. Listen for new/pending claims (No orderBy to match phone app)
     const qClaims = query(
       collection(db, 'claims'),
-      where('status', 'in', ['pending', 'disputed']),
-      limit(20)
+      where('status', 'in', ['pending', 'disputed', 'PENDING', 'DISPUTED', 'claim_pending', 'CLAIM_PENDING'])
     );
 
     // 2. Listen for unread messages sent to admin (No orderBy to avoid index)
     const qMessages = query(
       collection(db, 'messages'),
       where('receiverId', '==', user.uid),
-      where('isRead', '==', false),
-      limit(20)
+      where('isRead', '==', false)
     );
 
     let allNotifs = { claims: [], messages: [] };
@@ -105,7 +103,7 @@ export default function DashboardLayout({ children }) {
     const unsubClaims = onSnapshot(qClaims, (snap) => {
       allNotifs.claims = snap.docs.map(doc => {
         const data = doc.data();
-        const type = data.status === 'disputed' ? 'dispute' : 'claim';
+        const type = (data.status || '').toLowerCase() === 'disputed' ? 'dispute' : 'claim';
         const docTime = data.timestamp?.toDate?.() ||
           (data.timestamp instanceof Date ? data.timestamp : new Date());
         return {

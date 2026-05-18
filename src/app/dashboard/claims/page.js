@@ -117,6 +117,7 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
 
 const STATUS_LABELS = {
   'pending': 'PENDING',
+  'claim_pending': 'PENDING',
   'approved': 'APPROVED',
   'rejected': 'REJECTED',
   'returned': 'RETURNED',
@@ -198,7 +199,10 @@ export default function ClaimsPage() {
   const filteredClaims = useMemo(() => {
     setCurrentPage(1); // Reset page on filter change
     return claims.filter(c => {
-      const matchesStatus = statusFilter === 'All' || (c.status || 'pending').toLowerCase() === statusFilter;
+      const claimStatus = (c.status || 'pending').toLowerCase();
+      const matchesStatus = statusFilter === 'All' || 
+        claimStatus === statusFilter ||
+        (statusFilter === 'pending' && claimStatus === 'claim_pending');
 
       let matchesDate = true;
       if (c.timestamp?.toDate) {
@@ -480,7 +484,7 @@ export default function ClaimsPage() {
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {claim.status === 'pending' || !claim.status || claim.status === 'claim_pending' ? (
+                        {['pending', 'claim_pending'].includes((claim.status || 'pending').toLowerCase()) ? (
                           <>
                             <button
                               className={styles.actionBtnSuccess}
