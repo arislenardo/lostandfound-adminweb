@@ -42,12 +42,14 @@ export function AuthProvider({ children }) {
             await signOut(auth);
             setUser(null);
             setIsAdmin(false);
+            router.push('/login?error=unauthorized_admin');
           }
         } catch (error) {
           console.error("Error verifying admin status:", error);
           await signOut(auth);
           setUser(null);
           setIsAdmin(false);
+          router.push('/login?error=unauthorized_admin');
         }
       } else {
         setUser(null);
@@ -57,7 +59,7 @@ export function AuthProvider({ children }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (loading) return;
@@ -70,8 +72,8 @@ export function AuthProvider({ children }) {
       }
     } else {
       if (!isLoginPage) {
-        // Redirect to login with a specific error code
-        router.push('/login?error=unauthorized_admin');
+        // Redirect to login normally (no error param since it's just a general redirect or manual logout)
+        router.push('/login');
       }
     }
   }, [user, isAdmin, loading, pathname, router]);
