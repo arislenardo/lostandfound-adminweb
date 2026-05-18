@@ -26,14 +26,6 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
     ? dateObj.toLocaleString('en-US', { hour12: true, month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })
     : 'Unknown';
 
-  const statusColors = {
-    approved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
-    returned: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
-    resolved: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
-    rejected: { bg: 'var(--error-light)', color: '#b91c1c' },
-    pending: { bg: 'var(--warning-light)', color: '#c86037ff' },
-  };
-  const sc = statusColors[(claim.status || 'pending').toLowerCase()] || statusColors.pending;
 
   const overlayStyle = {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -81,16 +73,7 @@ function ClaimDetailModal({ isOpen, onClose, claim }) {
         </div>
         <div style={rowStyle}>
           <span style={labelStyle}>Status</span>
-          <span style={{
-            display: 'inline-block',
-            padding: '0.25rem 0.8rem',
-            borderRadius: '999px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            backgroundColor: sc.bg,
-            color: sc.color
-          }}>
+          <span style={{ ...valueStyle, textTransform: 'uppercase', fontWeight: 'bold' }}>
             {STATUS_LABELS[(claim.status || 'pending').toLowerCase()] || claim.status || 'PENDING'}
           </span>
         </div>
@@ -200,7 +183,7 @@ export default function ClaimsPage() {
     setCurrentPage(1); // Reset page on filter change
     return claims.filter(c => {
       const claimStatus = (c.status || 'pending').toLowerCase();
-      const matchesStatus = statusFilter === 'All' || 
+      const matchesStatus = statusFilter === 'All' ||
         claimStatus === statusFilter ||
         (statusFilter === 'pending' && claimStatus === 'claim_pending');
 
@@ -219,7 +202,7 @@ export default function ClaimsPage() {
         }
       }
 
-      const matchesSearch = !search || 
+      const matchesSearch = !search ||
         (c.itemName || '').toLowerCase().includes(search.toLowerCase()) ||
         (c.userEmail || '').toLowerCase().includes(search.toLowerCase()) ||
         (c.userId || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -484,7 +467,7 @@ export default function ClaimsPage() {
                     <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{date}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {['pending', 'claim_pending'].includes((claim.status || 'pending').toLowerCase()) ? (
+                        {false && ['pending', 'claim_pending'].includes((claim.status || 'pending').toLowerCase()) ? (
                           <>
                             <button
                               className={styles.actionBtnSuccess}

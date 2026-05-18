@@ -213,30 +213,48 @@ export default function MessageUserModal({ isOpen, onClose, user, adminUser }) {
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={`${styles.modalContent} ${msgStyles.chatModal}`} onClick={e => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>Message: {user.name || user.email || user.id} {isClosed && <span style={{ color: 'var(--error)', fontSize: '0.8rem', marginLeft: '8px' }}>(Closed)</span>}</h2>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {!isClosed ? (
-              <button
-                onClick={handleEndSession}
-                className={msgStyles.sendBtn}
-                style={{ backgroundColor: 'var(--error)', padding: '4px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                disabled={sending}
-              >
-                🔒 End Session
-              </button>
-            ) : (
-              <button
-                onClick={handleUnlockSession}
-                className={msgStyles.sendBtn}
-                style={{ backgroundColor: 'var(--success)', padding: '4px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                disabled={sending}
-              >
-                🔓 Re-open Session
-              </button>
-            )}
-            <button className={styles.closeBtn} onClick={onClose}>✕</button>
-          </div>
+        <button className={styles.closeBtn} onClick={onClose}>✕</button>
+
+        <div className={styles.modalHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '4.5rem' }}>
+          <h2 style={{ margin: 0 }}>Message: {user.name ? (
+            <>
+              {user.name}{' '}
+              <span style={{ fontWeight: 'normal', fontSize: '0.85em', opacity: 0.8 }}>
+                {user.email || 'No email'}
+              </span>
+            </>
+          ) : (
+            <span style={{ fontWeight: 'normal' }}>
+              {user.email || user.id}
+            </span>
+          )} {isClosed && <span style={{ color: 'var(--error)', fontSize: '0.8rem', marginLeft: '8px' }}>(Closed)</span>}</h2>
+
+          {!isClosed ? (
+            <button
+              onClick={handleEndSession}
+              className={styles.deleteBtn}
+              style={{
+                margin: 0,
+                padding: '0.5rem 1.25rem',
+                fontSize: '0.85rem',
+                borderRadius: '10px',
+                backgroundColor: 'var(--error)',
+                color: 'white'
+              }}
+              disabled={sending}
+            >
+              End Session
+            </button>
+          ) : (
+            <button
+              onClick={handleUnlockSession}
+              className={styles.saveBtn}
+              style={{ margin: 0, padding: '0.5rem 1.25rem', fontSize: '0.85rem', borderRadius: '10px', boxShadow: 'none' }}
+              disabled={sending}
+            >
+              Re-open Session
+            </button>
+          )}
         </div>
 
         <div className={msgStyles.chatWindow}>
