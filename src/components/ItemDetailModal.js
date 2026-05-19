@@ -198,6 +198,11 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
 
           <div className={styles.detailsSection}>
             <div className={styles.detailRow}>
+              <span className={styles.label}>Document Name</span>
+              <span className={styles.value} style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{item.id}</span>
+            </div>
+
+            <div className={styles.detailRow}>
               <span className={styles.label}>Name</span>
               {isEditing ? (
                 <input
@@ -324,31 +329,31 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
                   </button>
                   <button
                     onClick={async () => {
-                      if (window.confirm(`Are you sure you want to delete "${item.name}"? This action cannot be undone.`)) {
+                      const actionType = item.deleted ? 'restore' : 'archive';
+                      if (window.confirm(`Are you sure you want to ${actionType} "${item.name}"?`)) {
                         try {
                           setSaving(true);
-                          const { deleteDoc, doc } = await import('firebase/firestore');
-                          await deleteDoc(doc(db, collectionName, item.id));
+                          await updateDoc(doc(db, collectionName, item.id), { deleted: !item.deleted });
                           await addDoc(collection(db, 'admin_history'), {
                             adminId: auth.currentUser?.uid || 'unknown',
                             adminName: auth.currentUser?.email || 'Admin',
-                            actionType: type === 'found' ? 'DELETED_FOUND_ITEM' : 'DELETED_LOST_ITEM',
+                            actionType: type === 'found' ? (item.deleted ? 'RESTORED_FOUND_ITEM' : 'ARCHIVED_FOUND_ITEM') : (item.deleted ? 'RESTORED_LOST_ITEM' : 'ARCHIVED_LOST_ITEM'),
                             itemTitle: item.name,
                             itemId: item.id,
                             timestamp: serverTimestamp(),
                           });
-                          onUpdate(item.id, null); // null indicates deletion
+                          onUpdate(item.id, { deleted: !item.deleted });
                           onClose();
                         } catch (err) {
-                          alert(`Delete failed: ${err.message}`);
+                          alert(`${actionType} failed: ${err.message}`);
                         } finally {
                           setSaving(false);
                         }
                       }
                     }}
-                    className={styles.deleteBtn}
+                    className={item.deleted ? styles.editBtn : styles.deleteBtn}
                   >
-                    Delete Item
+                    {item.deleted ? 'Restore Item' : 'Archive Item'}
                   </button>
                 </>
               )}

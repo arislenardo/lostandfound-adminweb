@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { sendClaimStatusNotification } from '@/lib/emailService';
 import styles from '../table.module.css';
 import ExportModal from '@/components/ExportModal';
@@ -136,30 +136,27 @@ export default function ClaimsPage() {
 
   useEffect(() => {
     /**
-     * Fetches all claims from the Firestore 'claims' collection and sorts them
-     * in-memory by timestamp to avoid missing records without indexes.
+     * Sets up a real-time listener on the Firestore 'claims' collection.
+     * Sorts in-memory by timestamp to avoid requiring a composite index.
      */
-    async function fetchClaims() {
-      try {
-        // Fetch all claims without orderBy to avoid exclusion of docs without timestamp
-        const snap = await getDocs(collection(db, 'claims'));
-        const allClaims = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    const unsubscribe = onSnapshot(collection(db, 'claims'), (snap) => {
+      const allClaims = snap.docs.map(d => ({ ...d.data(), id: d.id }));
 
-        // Sort in-memory to be more robust
-        allClaims.sort((a, b) => {
-          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp || 0);
-          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : (b.timestamp || 0);
-          return timeB - timeA;
-        });
+      // Sort in-memory to be more robust
+      allClaims.sort((a, b) => {
+        const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : (a.timestamp || 0);
+        const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : (b.timestamp || 0);
+        return timeB - timeA;
+      });
 
-        setClaims(allClaims);
-      } catch (error) {
-        console.error("Error fetching claims:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchClaims();
+      setClaims(allClaims);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching claims:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Handle auto-opening claim details from notifications

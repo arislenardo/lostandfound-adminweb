@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase';
 import {
-  collection, getDocs, doc, updateDoc,
+  collection, onSnapshot, doc, updateDoc,
   addDoc, serverTimestamp, setDoc, deleteDoc
 } from 'firebase/firestore';
 import styles from '../table.module.css';
@@ -53,23 +53,24 @@ export default function UsersPage() {
 
   useEffect(() => {
     /**
-     * Fetches all users and administrators from Firestore and updates the state.
+     * Sets up real-time listeners on the Firestore 'users' and 'admins' collections
+     * so the table reflects changes automatically without requiring a page refresh.
      */
-    async function fetchAll() {
-      try {
-        const [usersSnap, adminsSnap] = await Promise.all([
-          getDocs(collection(db, 'users')),
-          getDocs(collection(db, 'admins')),
-        ]);
-        setUsers(usersSnap.docs.map(d => ({ ...d.data(), id: d.id })));
-        setAdminIds(new Set(adminsSnap.docs.map(d => d.id)));
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAll();
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+      setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching users:", error);
+      setLoading(false);
+    });
+
+    const unsubAdmins = onSnapshot(collection(db, 'admins'), (snap) => {
+      setAdminIds(new Set(snap.docs.map(d => d.id)));
+    }, (error) => {
+      console.error("Error fetching admins:", error);
+    });
+
+    return () => { unsubUsers(); unsubAdmins(); };
   }, []);
 
   useEffect(() => {
@@ -289,6 +290,10 @@ export default function UsersPage() {
         user={selectedUser}
         adminIds={adminIds}
         onToggleAdmin={handleToggleAdmin}
+        onUpdate={(userId, updatedFields) => {
+          setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updatedFields } : u));
+          setSelectedUser(prev => prev ? { ...prev, ...updatedFields } : prev);
+        }}
       />
     </div>
   );

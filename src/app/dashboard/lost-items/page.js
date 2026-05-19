@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query, doc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, orderBy, query, doc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import styles from '../table.module.css';
 import Image from 'next/image';
 import ItemDetailModal from '@/components/ItemDetailModal';
@@ -70,6 +70,7 @@ export default function LostItemsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [archiveFilter, setArchiveFilter] = useState('ACTIVE');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,40 +78,36 @@ export default function LostItemsPage() {
 
   useEffect(() => {
     /**
-     * Fetches the latest lost items from the Firestore 'lost_items' collection,
-     * ordered by creation date (newest first).
+     * Sets up a real-time listener on the Firestore 'lost_items' collection.
+     * The users map is fetched once, then onSnapshot keeps items up-to-date automatically.
      */
-    async function fetchItems() {
-      try {
-        const q = query(collection(db, 'lost_items'), orderBy('createdAt', 'desc'));
-        
-        const [snap, usersSnap] = await Promise.all([
-          getDocs(q),
-          getDocs(collection(db, 'users'))
-        ]);
-        
-        const usersMap = {};
-        usersSnap.forEach(doc => {
-          usersMap[doc.id] = doc.data().email || 'No Email';
-        });
+    let unsubscribe = () => {};
 
+    getDocs(collection(db, 'users')).then(usersSnap => {
+      const usersMap = {};
+      usersSnap.forEach(d => {
+        usersMap[d.id] = d.data().email || 'No Email';
+      });
+
+      const q = query(collection(db, 'lost_items'), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(q, (snap) => {
         const fetchedItems = snap.docs.map(d => {
           const data = d.data();
           return {
             ...data,
             id: d.id,
-            userEmail: usersMap[data.userId] || data.userId // Fallback to UID if email not found
+            userEmail: usersMap[data.userId] || data.userId
           };
         });
-        
         setItems(fetchedItems);
-      } catch (error) {
-        console.error("Error fetching lost items:", error);
-      } finally {
         setLoading(false);
-      }
-    }
-    fetchItems();
+      }, (error) => {
+        console.error("Error fetching lost items:", error);
+        setLoading(false);
+      });
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const filtered = useMemo(() => {
@@ -121,6 +118,11 @@ export default function LostItemsPage() {
         item.id.toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' ||
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
+      
+      let matchesArchive = true;
+      if (archiveFilter === 'ACTIVE') matchesArchive = !item.deleted;
+      if (archiveFilter === 'ARCHIVED') matchesArchive = item.deleted;
+
       let matchesStatus = true;
       if (statusFilter !== 'ALL') {
         if (statusFilter === 'RESOLVED') {
@@ -147,9 +149,9 @@ export default function LostItemsPage() {
         matchesDate = false;
       }
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesDate;
+      return matchesSearch && matchesCategory && matchesStatus && matchesDate && matchesArchive;
     });
-  }, [items, search, categoryFilter, statusFilter, startDate, endDate]);
+  }, [items, search, categoryFilter, statusFilter, startDate, endDate, archiveFilter]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -157,25 +159,6 @@ export default function LostItemsPage() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-
-  const handleDeleteItem = async (itemId) => {
-    const item = items.find(i => i.id === itemId);
-    if (!window.confirm(`Delete "${item?.name || 'this item'}"? This cannot be undone.`)) return;
-    try {
-      await deleteDoc(doc(db, 'lost_items', itemId));
-      await addDoc(collection(db, 'admin_history'), {
-        adminId: adminUser?.uid || 'unknown',
-        adminName: adminUser?.email || 'Admin',
-        actionType: 'DELETED_LOST_ITEM',
-        itemTitle: item?.name || 'Unknown Item',
-        itemId,
-        timestamp: serverTimestamp(),
-      });
-      setItems(prev => prev.filter(i => i.id !== itemId));
-    } catch (error) {
-      alert(`Failed to delete item: ${error.message}`);
-    }
-  };
 
   const handleExport = (startDate, endDate, format) => {
     let exportData = items;
@@ -300,10 +283,18 @@ export default function LostItemsPage() {
             onChange={e => setEndDate(e.target.value)}
           />
         </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Archive</label>
+          <select className={styles.filterSelect} value={archiveFilter} onChange={e => setArchiveFilter(e.target.value)}>
+            <option value="ACTIVE">Active</option>
+            <option value="ARCHIVED">Archived</option>
+            <option value="ALL">All</option>
+          </select>
+        </div>
         <button
           className={styles.actionBtn}
           style={{ padding: '0.5rem 1rem', alignSelf: 'flex-end', height: '38px' }}
-          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('ALL'); setStartDate(''); setEndDate(''); }}
+          onClick={() => { setSearch(''); setCategoryFilter('All'); setStatusFilter('ALL'); setArchiveFilter('ACTIVE'); setStartDate(''); setEndDate(''); }}
         >
           Reset
         </button>
@@ -342,9 +333,15 @@ export default function LostItemsPage() {
                     </span>
                   </td>
                   <td>
-                    <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
-                      {STATUS_LABELS[(item.status || 'PENDING').toUpperCase()] || item.status}
-                    </span>
+                    {item.deleted ? (
+                      <span className={`${styles.badge} ${styles.statusRejected}`}>
+                        ARCHIVED
+                      </span>
+                    ) : (
+                      <span className={`${styles.badge} ${getStatusStyle(item.status)}`}>
+                        {STATUS_LABELS[(item.status || 'PENDING').toUpperCase()] || item.status}
+                      </span>
+                    )}
                   </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                     {item.createdAt
