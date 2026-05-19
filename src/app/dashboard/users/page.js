@@ -190,16 +190,22 @@ export default function UsersPage() {
       </div>
 
       <div className={styles.filterBar}>
-        <input
-          className={styles.searchInput}
-          type="text"
-          placeholder="Search by name, email or ID…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select className={styles.filterSelect} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
-          {ROLE_FILTERS.map(r => <option key={r} value={r}>{r === 'All' ? 'All Roles' : r}</option>)}
-        </select>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Search</label>
+          <input
+            className={styles.searchInput}
+            type="text"
+            placeholder="Search by name, email or ID…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Role</label>
+          <select className={styles.filterSelect} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+            {ROLE_FILTERS.map(r => <option key={r} value={r}>{r === 'All' ? 'All Roles' : r}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className={styles.tableWrapper}>
