@@ -68,7 +68,10 @@ export default function ManualMatchModal({ isOpen, onClose, adminUser }) {
       });
 
       // Update statuses
-      await updateDoc(doc(db, 'found_items', selectedFound), { status: 'returned' });
+      await updateDoc(doc(db, 'found_items', selectedFound), { 
+        status: 'returned',
+        returnedAt: serverTimestamp()
+      });
       await updateDoc(doc(db, 'lost_items',  selectedLost),  { status: 'resolved', claimedFoundItemId: selectedFound });
 
       // Log action

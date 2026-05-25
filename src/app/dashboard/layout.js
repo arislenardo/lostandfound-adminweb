@@ -18,6 +18,7 @@ import {
   CheckCircle,
   AlertCircle,
   MessageSquare,
+  Trophy,
   X
 } from 'lucide-react';
 import styles from './dashboard.module.css';
@@ -231,6 +232,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Lost Items', path: '/dashboard/lost-items', icon: <PackageMinus size={20} strokeWidth={2} /> },
     { name: 'Claims', path: '/dashboard/claims', icon: <ClipboardList size={20} strokeWidth={2} /> },
     { name: 'Users', path: '/dashboard/users', icon: <Users size={20} strokeWidth={2} /> },
+    { name: 'Leaderboard', path: '/dashboard/leaderboard', icon: <Trophy size={20} strokeWidth={2} /> },
     { name: 'Audit Log', path: '/dashboard/audit', icon: <History size={20} strokeWidth={2} /> },
   ];
 

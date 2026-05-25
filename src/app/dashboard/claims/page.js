@@ -237,7 +237,10 @@ export default function ClaimsPage() {
 
       // 2. If approved, ALSO update the items in found_items/lost_items
       if (newStatus === 'approved' && claim.itemId) {
-        await updateDoc(doc(db, 'found_items', claim.itemId), { status: 'returned' });
+        await updateDoc(doc(db, 'found_items', claim.itemId), { 
+          status: 'returned',
+          returnedAt: serverTimestamp()
+        });
 
         // If it was a manual match or has lostItemId, resolve that too
         if (claim.lostItemId) {
@@ -284,8 +287,18 @@ export default function ClaimsPage() {
     setIsDetailOpen(true);
   };
 
-  const handleExport = (exportStartDate, exportEndDate, format) => {
+  const handleExport = (exportStartDate, exportEndDate, searchTerm, format) => {
     let exportData = claims;
+
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      exportData = exportData.filter(c => 
+        (c.itemName || '').toLowerCase().includes(lowerTerm) ||
+        (c.userEmail || '').toLowerCase().includes(lowerTerm) ||
+        (c.userId || '').toLowerCase().includes(lowerTerm) ||
+        (c.itemId || '').toLowerCase().includes(lowerTerm)
+      );
+    }
 
     if (exportStartDate) {
       const start = new Date(exportStartDate);

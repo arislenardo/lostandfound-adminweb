@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import styles from './modal.module.css';
 
 import { db, auth } from '@/lib/firebase';
-import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * Modal component for displaying detailed information about a user/citizen.
@@ -50,6 +50,17 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
   const handleSave = async () => {
     setSaving(true);
     try {
+      // 1. Duplicate Phone Check
+      if (formData.phoneNumber && formData.phoneNumber !== user.phoneNumber) {
+        const q = query(collection(db, 'users'), where('phoneNumber', '==', formData.phoneNumber));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          alert(`The phone number ${formData.phoneNumber} is already associated with another account.`);
+          setSaving(false);
+          return;
+        }
+      }
+
       await updateDoc(doc(db, 'users', user.id), formData);
       await addDoc(collection(db, 'admin_history'), {
         adminId: auth.currentUser?.uid || 'unknown',
@@ -65,6 +76,54 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
       setIsEditing(false);
     } catch (error) {
       alert(`Failed to save: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!window.confirm("Are you sure you want to reactivate this account? You must verify the citizen's ID at the station first.")) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', user.id), { status: 'active', lastLogin: serverTimestamp() });
+      await addDoc(collection(db, 'admin_history'), {
+        adminId: auth.currentUser?.uid || 'unknown',
+        adminName: auth.currentUser?.email || 'Admin',
+        actionType: 'EDITED_USER',
+        itemTitle: `${user.name || user.email || 'User'} (Reactivated)`,
+        itemId: user.id,
+        timestamp: serverTimestamp(),
+      });
+      if (onUpdate) {
+        onUpdate(user.id, { status: 'active' });
+      }
+      alert('Account successfully reactivated!');
+    } catch (error) {
+      alert(`Failed to reactivate: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!window.confirm("Are you sure you want to deactivate this account manually?")) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', user.id), { status: 'inactive' });
+      await addDoc(collection(db, 'admin_history'), {
+        adminId: auth.currentUser?.uid || 'unknown',
+        adminName: auth.currentUser?.email || 'Admin',
+        actionType: 'EDITED_USER',
+        itemTitle: `${user.name || user.email || 'User'} (Deactivated)`,
+        itemId: user.id,
+        timestamp: serverTimestamp(),
+      });
+      if (onUpdate) {
+        onUpdate(user.id, { status: 'inactive' });
+      }
+      alert('Account successfully deactivated!');
+    } catch (error) {
+      alert(`Failed to deactivate: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -121,6 +180,11 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
             <span className={`${styles.userBadge} ${isAdmin ? styles.userBadgeAdmin : ''}`}>
               {isAdmin ? 'ADMINISTRATOR' : 'CITIZEN'}
             </span>
+            {user.status === 'inactive' && (
+              <span className={`${styles.userBadge}`} style={{ backgroundColor: '#dc2626', marginTop: '0.5rem' }}>
+                INACTIVE
+              </span>
+            )}
           </div>
 
           {/* Right Column: User Information */}
@@ -176,7 +240,11 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-              {isEditing ? (
+              {user.status === 'inactive' ? (
+                <button onClick={handleReactivate} disabled={saving} className={styles.saveBtn} style={{ backgroundColor: '#16a34a' }}>
+                  {saving ? 'Processing...' : 'Verify ID & Reactivate Account'}
+                </button>
+              ) : isEditing ? (
                 <>
                   <button onClick={handleSave} disabled={saving} className={styles.saveBtn}>
                     {saving ? 'Saving...' : 'Save Changes'}
@@ -186,9 +254,14 @@ export default function UserDetailModal({ isOpen, onClose, user, adminIds, onTog
                   </button>
                 </>
               ) : (
-                <button onClick={handleStartEdit} className={styles.editBtn}>
-                  Edit User Details
-                </button>
+                <>
+                  <button onClick={handleStartEdit} className={styles.editBtn}>
+                    Edit User Details
+                  </button>
+                  <button onClick={handleDeactivate} disabled={saving} className={styles.cancelBtn} style={{ backgroundColor: '#dc2626', color: 'white', border: 'none' }}>
+                    {saving ? 'Processing...' : 'Deactivate Account'}
+                  </button>
+                </>
               )}
             </div>
           </div>

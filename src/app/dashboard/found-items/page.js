@@ -113,7 +113,8 @@ export default function FoundItemsPage() {
     return items.filter(item => {
       const matchesSearch = !search ||
         (item.name || '').toLowerCase().includes(search.toLowerCase()) ||
-        item.id.toLowerCase().includes(search.toLowerCase());
+        item.id.toLowerCase().includes(search.toLowerCase()) ||
+        (item.userEmail || '').toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === 'All' ||
         (item.category || '').toLowerCase() === categoryFilter.toLowerCase();
       
@@ -152,8 +153,24 @@ export default function FoundItemsPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleExport = (startDate, endDate, format) => {
+  const handleExport = (startDate, endDate, searchTerm, selectedCategory, format) => {
     let exportData = items;
+
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      exportData = exportData.filter(item => 
+        (item.name || '').toLowerCase().includes(lowerTerm) ||
+        item.id.toLowerCase().includes(lowerTerm) ||
+        (item.userEmail || '').toLowerCase().includes(lowerTerm)
+      );
+    }
+
+    if (selectedCategory && selectedCategory !== 'All') {
+      const lowerCategory = selectedCategory.toLowerCase();
+      exportData = exportData.filter(item => 
+        (item.category || '').toLowerCase() === lowerCategory
+      );
+    }
 
     if (startDate) {
       const start = new Date(startDate);
@@ -399,6 +416,7 @@ export default function FoundItemsPage() {
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExport}
         title="Export Found Items"
+        showCategory={true}
       />
     </div>
   );

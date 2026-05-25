@@ -124,13 +124,17 @@ export default function ItemDetailModal({ isOpen, onClose, item, type, onUpdate 
     setSaving(true);
     try {
       const adminUser = auth.currentUser;
-      await updateDoc(doc(db, collectionName, item.id), {
+      const updateFields = {
         name: formData.name.trim(),
         category: formData.category,
         description: formData.description.trim(),
         locationName: formData.locationName.trim(),
         status: formData.status,
-      });
+      };
+      if (formData.status === 'RETURNED' && item.status !== 'RETURNED') {
+        updateFields.returnedAt = serverTimestamp();
+      }
+      await updateDoc(doc(db, collectionName, item.id), updateFields);
       await addDoc(collection(db, 'admin_history'), {
         adminId: adminUser?.uid || 'unknown',
         adminName: adminUser?.email || 'Admin',

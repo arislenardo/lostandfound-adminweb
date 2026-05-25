@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { db, auth } from '@/lib/firebase';
 import {
   collection, onSnapshot, doc, updateDoc,
-  addDoc, serverTimestamp, setDoc, deleteDoc
+  addDoc, serverTimestamp, setDoc, deleteDoc, writeBatch
 } from 'firebase/firestore';
 import styles from '../table.module.css';
 import MessageUserModal from '@/components/MessageUserModal';
@@ -152,6 +152,53 @@ export default function UsersPage() {
     }
   };
 
+  const handleDeactivateAccounts = async () => {
+    if (!window.confirm("This will scan all users and deactivate those who haven't logged in for over 1 year. Proceed?")) return;
+    setLoading(true);
+    try {
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      users.forEach(u => {
+        if (u.status === 'inactive') return; // Already inactive
+        
+        let lastActive = null;
+        if (u.lastLogin) {
+          lastActive = u.lastLogin.toDate ? u.lastLogin.toDate() : new Date(u.lastLogin);
+        } else if (u.createdAt) {
+          lastActive = u.createdAt.toDate ? u.createdAt.toDate() : new Date(u.createdAt);
+        }
+        
+        if (lastActive && lastActive < oneYearAgo) {
+          batch.update(doc(db, 'users', u.id), { status: 'inactive' });
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        await batch.commit();
+        await addDoc(collection(db, 'admin_history'), {
+          adminId: adminUser?.uid || 'unknown',
+          adminName: adminUser?.email || 'Admin',
+          actionType: 'EDITED_USER',
+          itemTitle: `Deactivated ${count} inactive accounts`,
+          itemId: 'SYSTEM_MAINTENANCE',
+          timestamp: serverTimestamp(),
+        });
+        alert(`Successfully deactivated ${count} inactive accounts.`);
+      } else {
+        alert("No inactive accounts found older than 1 year.");
+      }
+    } catch (error) {
+      alert(`Failed to deactivate accounts: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /**
    * Determines the CSS class for the role badge based on the user's role.
    * @param {Object} user - The user object.
@@ -179,14 +226,18 @@ export default function UsersPage() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.header}>
-        <h2>Registered User Profiles</h2>
-        <span>
-          {filtered.length > 0 ? (
-            `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} users`
-          ) : (
-            '0 users'
-          )}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div>
+            <h2>Registered User Profiles</h2>
+            <span>
+              {filtered.length > 0 ? (
+                `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} users`
+              ) : (
+                '0 users'
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className={styles.filterBar}>
@@ -231,9 +282,16 @@ export default function UsersPage() {
                     <td style={{ fontSize: '0.875rem', wordBreak: 'break-all', minWidth: '150px' }}>{user.email || 'N/A'}</td>
                     <td style={{ fontSize: '0.875rem' }}>{user.phoneNumber || 'N/A'}</td>
                     <td>
-                      <span className={`${styles.badge} ${getRoleBadgeClass(user)}`}>
-                        {getRoleLabel(user)}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-start' }}>
+                        <span className={`${styles.badge} ${getRoleBadgeClass(user)}`}>
+                          {getRoleLabel(user)}
+                        </span>
+                        {user.status === 'inactive' && (
+                          <span className={styles.badge} style={{ backgroundColor: '#dc2626', color: 'white', fontSize: '0.7rem' }}>
+                            INACTIVE
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>

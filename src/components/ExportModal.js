@@ -1,22 +1,28 @@
 import React, { useState } from 'react';
 
 /**
- * Modal component for exporting reports with a date range filter.
+ * Modal component for exporting reports with a date range filter and search keyword.
  * 
  * @param {Object} props
  * @param {boolean} props.isOpen - Whether the modal is open
  * @param {Function} props.onClose - Function to close the modal
- * @param {Function} props.onExport - Callback when export is triggered: (startDate, endDate, format) => void
+ * @param {Function} props.onExport - Callback when export is triggered: (startDate, endDate, searchTerm, format) => void
  * @param {string} props.title - The title of the modal (e.g., "Export Found Items")
  */
-export default function ExportModal({ isOpen, onClose, onExport, title }) {
+export default function ExportModal({ isOpen, onClose, onExport, title, showCategory = false }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [category, setCategory] = useState('All');
 
   if (!isOpen) return null;
 
   const handleExport = (format) => {
-    onExport(startDate, endDate, format);
+    if (showCategory) {
+      onExport(startDate, endDate, searchTerm, category, format);
+    } else {
+      onExport(startDate, endDate, searchTerm, format);
+    }
     onClose();
   };
 
@@ -57,16 +63,62 @@ export default function ExportModal({ isOpen, onClose, onExport, title }) {
         </h2>
 
         <div>
-          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>Start Date (Optional)</label>
-          <input type="date" style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>Search Keyword (Optional)</label>
+          <input 
+            type="text" 
+            style={inputStyle} 
+            placeholder="Search names, items, emails..." 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>End Date (Optional)</label>
-          <input type="date" style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+        {showCategory && (
+          <div>
+            <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>Item Category</label>
+            <select
+              style={inputStyle}
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+            >
+              <option value="All">All Categories</option>
+              {[
+                'Backpacks / Bags',
+                'Books / Notebooks',
+                'Card',
+                'Chargers / Cables',
+                'Clothing',
+                'Folder / Envelopes',
+                'Glasses / Sunglasses',
+                'Hats',
+                'Headphones / Earbuds',
+                'Keys',
+                'Laptops',
+                'Phone / Tablet',
+                'Umbrellas',
+                'Wallet',
+                'Watch',
+                'Water Bottles',
+                'Others',
+              ].map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>Start Date (Optional)</label>
+            <input type="date" style={inputStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--foreground, #374151)' }}>End Date (Optional)</label>
+            <input type="date" style={inputStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
           <button style={{ ...btnStyle, backgroundColor: '#16a34a' }} onClick={() => handleExport('pdf')}>
             Export PDF
           </button>

@@ -217,9 +217,20 @@ export default function AuditPage() {
     setEndDate('');
   };
 
-  const handleExport = (exportStartDate, exportEndDate, format) => {
+  const handleExport = (exportStartDate, exportEndDate, searchTerm, format) => {
     let exportData = logs;
     
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      exportData = exportData.filter(log => 
+        (log.adminName || '').toLowerCase().includes(lowerTerm) ||
+        (log.adminId || '').toLowerCase().includes(lowerTerm) ||
+        (log.actionType || '').toLowerCase().includes(lowerTerm) ||
+        (log.itemTitle || '').toLowerCase().includes(lowerTerm) ||
+        (log.itemId || '').toLowerCase().includes(lowerTerm)
+      );
+    }
+
     if (exportStartDate) {
       const start = new Date(exportStartDate);
       start.setHours(0, 0, 0, 0);

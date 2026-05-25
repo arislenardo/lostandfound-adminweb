@@ -62,7 +62,7 @@ export default function DashboardOverview() {
    * Generates and downloads a monthly CSV report containing all recorded
    * found items, lost items, and claims from the database.
    */
-  const handleExport = (startDate, endDate, format) => {
+  const handleExport = (startDate, endDate, searchTerm, format) => {
     const now = new Date();
     let start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth(), 1);
     let end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -70,16 +70,27 @@ export default function DashboardOverview() {
     if (startDate) start.setHours(0, 0, 0, 0);
     if (endDate) end.setHours(23, 59, 59, 999);
 
-    const filterByDate = (items, dateKey) => items.filter(item => {
+    const filterByDateAndSearch = (items, dateKey) => items.filter(item => {
       const timestamp = item[dateKey];
       if (!timestamp) return false;
       const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return d >= start && d <= end;
+      if (d < start || d > end) return false;
+      
+      if (searchTerm) {
+        const lowerTerm = searchTerm.toLowerCase();
+        // Try matching common fields across different item types
+        return (item.name || '').toLowerCase().includes(lowerTerm) ||
+               (item.itemName || '').toLowerCase().includes(lowerTerm) ||
+               (item.id || '').toLowerCase().includes(lowerTerm) ||
+               (item.userEmail || '').toLowerCase().includes(lowerTerm) ||
+               (item.userId || '').toLowerCase().includes(lowerTerm);
+      }
+      return true;
     });
 
-    const filteredFound = filterByDate(allData.found, 'createdAt');
-    const filteredLost = filterByDate(allData.lost, 'createdAt');
-    const filteredClaims = filterByDate(allData.claims, 'timestamp');
+    const filteredFound = filterByDateAndSearch(allData.found, 'createdAt');
+    const filteredLost = filterByDateAndSearch(allData.lost, 'createdAt');
+    const filteredClaims = filterByDateAndSearch(allData.claims, 'timestamp');
 
     const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
     const dateRangeStr = `${formatDate(start)} to ${formatDate(end)}`;
